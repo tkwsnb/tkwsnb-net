@@ -1,7 +1,6 @@
 # build output
 dist/
 .output/
-src/content/.obsidian/
 
 # dependencies
 node_modules/
@@ -24,3 +23,10 @@ pnpm-debug.log*
 *.pem
 .cache
 .astro
+
+# R2に保存している画像､動画ファイル等
+src/content/assets
+
+# obsidian vault
+src/content/.obsidian
+src/content/templates
