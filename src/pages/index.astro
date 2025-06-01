@@ -24,13 +24,12 @@ const latestNotes = allNotes.sort(collectionDateSort).slice(0, MAX_NOTES);
 	<section>
 		<h1 class="title mb-6">ようこそ。</h1>
 		<p class="mb-4">
-			このサイトは、私（/tkwsnb/）が好きな映画を紹介したりしなかったりするサイトです。<br />
-			blog構築の勉強も兼ねているので、サイト構成がチグハグだったりするのは許してね。
+			このサイトは、私（/tkwsnb/）が好きな映画を紹介したりしなかったり、あるいは映画に関するニュースだったり、またあるいは私自身のとりとめのない日常をメモ代わりに書き留められたり、そういった文章で構成されています。<br />
 		</p>
 		<SocialList />
 	</section>
 	<section class="mt-16">
-		<h2 class="title text-accent mb-6 text-xl"><a href="/posts/">Posts</a></h2>
+		<h2 class="title text-accent mb-6 text-xl"><a href="/posts/">映画のこと</a></h2>
 		<ul class="space-y-6" role="list">
 			{
 				allPostsByDate.map((p) => (
@@ -45,7 +44,7 @@ const latestNotes = allNotes.sort(collectionDateSort).slice(0, MAX_NOTES);
 		latestNotes.length > 0 && (
 			<section class="mt-16">
 				<h2 class="title text-accent mb-6 text-xl">
-					<a href="/notes/">Notes</a>
+					<a href="/notes/">雑記</a>
 				</h2>
 				<ul class="space-y-6" role="list">
 					{latestNotes.map((note) => (
