@@ -120,3 +120,21 @@ function rawFonts(ext: string[]) {
 		},
 	};
 }
+
+function remarkWikiLinks() {
+	// 画像/動画用: ![[xxx.webp]] - グループ1がパス
+	const mediaWikiLinkRegex = /!\[\[(.*?)(?:\|(.*?))?\]\]/g;
+
+	return (tree) => {
+		// メディア（画像・動画）を処理
+		visit(tree, "text", (node, index, parent) => {
+		if (!node.value.includes("![[")) return;
+		
+		// 省略
+		
+		if (
+			path.match(/\.(jpe?g|png|gif|webp|avif|svg|mp4|webm|mov)$/i) &&
+			!path.includes("/")
+		) {
+			r2Url = `${R2_BUCKET}/${path}`;
+		}
