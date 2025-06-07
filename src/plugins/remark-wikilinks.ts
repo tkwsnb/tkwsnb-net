@@ -7,7 +7,9 @@ import { visit } from 'unist-util-visit';
 const WIKILINK_REGEX = /^!\[\[([^\]]+)\]\]$/;
 
 const normalizeFileName = (name: string): string => {
-	return name.replace(/\.md$/, "").replace(/\s/g, "-");
+	// 拡張子を削除し、スペースをハイフンに置換
+	const baseName = name.split('.').slice(0, -1).join('.');
+	return baseName.replace(/\s/g, "-");
 };
 
 const createHtmlNode = (webPath: string, altText: string): { type: 'html', value: string } | null => {
@@ -28,20 +30,21 @@ const createHtmlNode = (webPath: string, altText: string): { type: 'html', value
     return null;
 }
 
-const findFile = (baseDir: string, fileName: string): string | null => {
-    // 修正点1: 検索対象を記事フォルダ内の 'assets' フォルダに限定
-    const searchDir = path.resolve(baseDir, "assets");
+// src/assets フォルダ内からファイルを探す関数
+const findFileInAssets = (fileName: string): { filePath: string; webPath: string } | null => {
+    const assetsDir = path.resolve(process.cwd(), "src/assets");
+    // ファイル名に拡張子が含まれていない場合も想定して検索
     const possibleExtensions = ["", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".mp4", ".webm"];
 
-    if (!fs.existsSync(searchDir)) {
-        return null;
-    }
-
     for (const ext of possibleExtensions) {
-        const filePath = path.join(searchDir, `${fileName}${ext}`);
+        const testFileName = `${fileName}${ext}`;
+        const filePath = path.join(assetsDir, testFileName);
+
         if (fs.existsSync(filePath)) {
-            // ファイルのフルパスを返す
-            return filePath;
+            // Astroがsrc/assets内の画像を処理できるよう、パスを生成
+            // 例: 'C:/.../src/assets/hoge.png' -> '/src/assets/hoge.png'
+            const webPath = `/src/assets/${testFileName}`;
+            return { filePath, webPath };
         }
     }
     return null;
@@ -58,27 +61,25 @@ export function remarkWikiLinks() {
 			if (!match || !match[1]) return;
 			
 			const fileNameFromLink = match[1];
-			const currentFilePath = file.history[0];
-			if (!currentFilePath) return;
 
-			const markdownDir = path.dirname(currentFilePath);
+			// [[hoge.png]] から `hoge` を取得
 			const normalizedFileName = normalizeFileName(fileNameFromLink);
-            const foundFilePath = findFile(markdownDir, normalizedFileName);
 
-			if (foundFilePath) {
-                // 修正点2: 正しいWeb用パスを生成
-                // 例: '.../src/content/notes/slug/assets/img.png' -> '/notes/slug/assets/img.png'
-                const contentDir = path.resolve(process.cwd(), 'src/content');
-                const webPath = '/' + path.relative(contentDir, foundFilePath).replace(/\\/g, '/');
+            // src/assets からファイルを検索
+            const foundFile = findFileInAssets(normalizedFileName);
 
-				const altText = path.basename(foundFilePath, path.extname(foundFilePath));
+			if (foundFile) {
+                const { webPath } = foundFile;
+
+				// altテキストは元のファイル名から拡張子を除いたもの
+				const altText = fileNameFromLink.split('.').slice(0, -1).join('.');
 				const newNode = createHtmlNode(webPath, altText);
 
 				if (newNode) {
 					parent.children[index] = newNode;
 				}
 			} else {
-				console.warn(`[remark-wikilinks] File not found: "![[${fileNameFromLink}]]" (from: ${currentFilePath})`);
+				console.warn(`[remark-wikilinks] File not found in src/assets/: "![[${fileNameFromLink}]]"`);
 			}
 		});
 	};
