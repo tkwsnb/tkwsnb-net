@@ -52,14 +52,19 @@ const findFile = (baseDir: string, fileName: string): { filePath: string; webPat
     const possibleExtensions = ["", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".mp4", ".webm"];
 
     for (const dir of searchDirs) {
-        for (const ext of possibleExtensions) {
+        for (the ext of possibleExtensions) {
             const filePath = path.join(dir, `${fileName}${ext}`);
             if (fs.existsSync(filePath)) {
-                // publicディレクトリ内のファイルはルートからのパス、それ以外は/assets/からのパス
+                // publicディレクトリ内のファイルはルートからのパス、それ以外はプロジェクトルートからの相対パス
                 const isPublic = dir.startsWith(path.resolve(process.cwd(), "public"));
-                const webPathPrefix = isPublic ? "" : "/assets";
-                const webPath = path.join(webPathPrefix, `${fileName}${ext}`).replace(/\\/g, '/');
-                return { filePath, webPath };
+                const webPathPrefix = isPublic ? "" : "/src"; // src/assets/を Astroが処理できるように
+                const relativeDir = path.relative(process.cwd(), dir);
+                const webPath = `/${path.join(relativeDir, `${fileName}${ext}`)}`.replace(/\\/g, '/');
+
+                // public内のファイルパスから 'public' を削除
+                const finalWebPath = webPath.startsWith('/public/') ? webPath.replace('/public', '') : webPath;
+
+                return { filePath, webPath: finalWebPath };
             }
         }
     }
@@ -71,39 +76,40 @@ export function remarkWikiLinks() {
 	return (tree: Root, file: VFile) => {
 		// paragraph (段落) ノードを走査する
 		visit(tree, "paragraph", (node: Paragraph) => {
-			// 段落の子要素が1つだけで、それがtextノードでなければ処理しない
-			if (node.children.length !== 1 || node.children[0].type !== "text") {
+			// TypeScriptエラー(Object is possibly 'undefined')を回避するためのチェック
+			if (!node.children || node.children.length !== 1 || node.children[0]?.type !== "text") {
 				return;
 			}
 			const textNode = node.children[0];
 			
-			// テキストがWikiLink形式に完全に一致するかチェック
 			const match = textNode.value.match(WIKILINK_REGEX);
-			
-			// マッチしない、またはファイル名が取得できない場合は何もしない
 			if (!match || !match[1]) {
 				return;
 			}
 			
 			const fileNameFromLink = match[1];
-
-			// 1. ファイル名を正規化
 			const normalizedFileName = normalizeFileName(fileNameFromLink);
-			
-			// 2. ファイル実体のパスを解決 (src/assets と public を検索)
 			const markdownDir = path.dirname(file.path);
-            const foundFile = findFile(markdownDir, normalizedFileName);
+      const foundFile = findFile(markdownDir, normalizedFileName);
 
 			if (foundFile) {
                 const { filePath, webPath } = foundFile;
-
-				// 3. ファイルタイプに応じた最適なノードへ変換
 				const newNode = createFileNode(filePath, webPath);
 
 				if (newNode) {
-					// 4. paragraphノード自体を、新しいノードで置き換える
-					//    これにより型エラーを根本的に回避する
-					Object.assign(node, newNode);
+					// paragraphノードを安全に置き換える
+					// 'children'と'value'を削除し、新しいプロパティを追加
+					const paragraph = node as any;
+					delete paragraph.children;
+					paragraph.type = newNode.type;
+
+					if (newNode.type === 'html') {
+						paragraph.value = (newNode as { value: string }).value;
+					} else if (newNode.type === 'mdxJsxFlowElement') {
+						paragraph.name = (newNode as { name: string }).name;
+						paragraph.attributes = (newNode as { attributes: any[] }).attributes;
+						paragraph.children = (newNode as { children: any[] }).children;
+					}
 				}
 			} else {
 				console.warn(`[remark-wikilinks] File not found for wikilink: "![[${fileNameFromLink}]]" (normalized to: ${normalizedFileName})`);
