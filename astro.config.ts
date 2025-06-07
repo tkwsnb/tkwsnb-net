@@ -14,7 +14,7 @@ import { siteConfig } from "./src/site.config";
 import remarkDirective from "remark-directive"; /* Handle ::: directives as nodes */
 import { remarkAdmonitions } from "./src/plugins/remark-admonitions"; /* Add admonitions */
 import { remarkReadingTime } from "./src/plugins/remark-reading-time";
-import { remarkWikiLinks } from "./src/plugins/remark-wikilinks";
+import obsidianLinks from './integrations/obsidian-links'; // ← これを追加
 
 // Rehype plugins
 import { rehypeHeadingIds } from "@astrojs/markdown-remark";
@@ -29,6 +29,7 @@ export default defineConfig({
 		domains: ["webmention.io"],
 	},
 	integrations: [
+		obsidianLinks(), // ← これを追加
 		expressiveCode(expressiveCodeOptions),
 		icon(),
 		sitemap(),
@@ -83,7 +84,6 @@ export default defineConfig({
 			rehypeUnwrapImages,
 		],
 		remarkPlugins: [
-			remarkWikiLinks(), 
 			remarkReadingTime, 
 			remarkDirective, 
 			remarkAdmonitions
