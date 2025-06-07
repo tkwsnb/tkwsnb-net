@@ -82,7 +82,12 @@ export default defineConfig({
 			],
 			rehypeUnwrapImages,
 		],
-		remarkPlugins: [remarkWikiLinks(), remarkReadingTime, remarkDirective, remarkAdmonitions],
+		remarkPlugins: [
+			remarkWikiLinks(), 
+			remarkReadingTime, 
+			remarkDirective, 
+			remarkAdmonitions
+		],
 		remarkRehype: {
 			footnoteLabelProperties: {
 				className: [""],

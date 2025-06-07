@@ -1,11 +1,9 @@
-// src/plugins/remark-wikilinks.ts
+// src/plugins/remark-wikilinks.ts (最終修正版)
 import fs from 'node:fs';
 import path from 'node:path';
-// mdastから必要な型をインポートします
 import type { Root, Paragraph, Image, HTML, BlockContent } from 'mdast';
 import type { VFile } from 'vfile';
 import { visit } from 'unist-util-visit';
-// unistからParent型をインポートします
 import type { Parent } from 'unist';
 
 const WIKILINK_REGEX = /!\[\[([^\]]+)\]\]/;
@@ -17,18 +15,17 @@ const fileExists = (fileName: string): boolean => {
 
 export function remarkWikiLinks() {
 	return (tree: Root, file: VFile) => {
-		// visitのコールバック引数を修正し、オプショナルな引数に対応
+		// file オブジェクトが存在し、かつ path プロパティを持つ場合のみログを出力
+		if (file?.path) {
+			console.log(`[remark-wikilinks] Processing file: ${file.path}`);
+		}
+
 		visit(tree, 'paragraph', (node: Paragraph, index?: number, parent?: Parent) => {
-			// --- エラー回避のためのチェック処理 ---
-			// 1. parentやindexが存在しない場合は何もしない
-			if (parent === undefined || parent === null || index === undefined || index === null) {
+			// [最重要] visitのコールバック内で、毎回file.pathの存在をチェックする
+			if (!file?.path || parent === undefined || parent === null || index === undefined || index === null) {
 				return;
 			}
-			// 2. file.pathが存在しない場合も何もしない
-			if (!file.path) {
-				return;
-			}
-			// 3. 段落が単一のテキストノードでない場合は対象外
+			
 			if (node.children.length !== 1 || node.children[0]?.type !== 'text') {
 				return;
 			}
@@ -39,17 +36,19 @@ export function remarkWikiLinks() {
 			if (!match || !match[1]) {
 				return;
 			}
+			
+			console.log(`[remark-wikilinks] Found wikilink in ${path.basename(file.path)}: ${textNode.value}`);
 
 			const fileName = match[1];
 
 			if (fileExists(fileName)) {
+				console.log(`[remark-wikilinks] File "${fileName}" exists. Converting...`);
+
 				const altText = fileName.split('.').slice(0, -1).join('.');
 				const extension = path.extname(fileName).toLowerCase();
-				const fileDir = path.dirname(file.path);
+				const fileDir = path.dirname(file.path); // この時点で file.path は存在が保証されている
 				const relativePath = path.relative(fileDir, path.join(ASSETS_DIR, fileName)).replace(/\\/g, '/');
 
-				// --- ノードの置換処理を修正 ---
-				// 画像の場合
 				if (['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'].includes(extension)) {
 					const imageNode: Image = {
 						type: 'image',
@@ -57,20 +56,14 @@ export function remarkWikiLinks() {
 						alt: altText,
 						title: null,
 					};
-					// [修正点] 段落ノード(node)の中身(children)を画像ノードに置き換える
-					// これで <p><img ...></p> が生成され、Astroが<p>を自動で取り除いてくれます。
 					node.children = [imageNode];
-
 				} 
-				// 動画の場合
 				else if (['.mp4', '.webm'].includes(extension)) {
 					const videoHtml = `<video src="${relativePath}" controls autoplay muted loop playsinline style="width: 100%; max-width: 100%; border-radius: 8px;"></video>`;
 					const htmlNode: HTML = {
 						type: 'html',
 						value: videoHtml,
 					};
-					// [修正点] 段落ノード(Paragraph)をHTMLブロックノードで置き換える
-					// (htmlNode as BlockContent)で型エラーを解決
 					parent.children.splice(index, 1, htmlNode as BlockContent);
 				}
 			} else {
