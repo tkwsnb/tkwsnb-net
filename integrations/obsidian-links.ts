@@ -1,23 +1,37 @@
-// /integrations/obsidian-links.ts (R2のURLを直接参照する版)
+// /integrations/obsidian-links.ts (依存関係ゼロの最終版)
 import type { AstroIntegration } from 'astro';
 import path from 'node:path';
 import fs from 'node:fs';
-import { loadEnv } from 'vite';
 
 const WIKILINK_IMAGE_REGEX = /<p>!\[\[((?:(?!\.\.).)+?\.(?:png|jpg|jpeg|webp|gif|svg))\]\]<\/p>/g;
 const WIKILINK_VIDEO_REGEX = /<p>!\[\[((?:(?!\.\.).)+?\.(?:mp4|webm))\]\]<\/p>/g;
+
+// .envファイルから手動でURLを読み込む関数
+function getAssetsUrl(): string | null {
+    const envPath = path.resolve(process.cwd(), '.env');
+    if (!fs.existsSync(envPath)) {
+        return null;
+    }
+    const envContent = fs.readFileSync(envPath, 'utf-8');
+    const lines = envContent.split('\n');
+    const urlLine = lines.find(line => line.trim().startsWith('PUBLIC_ASSETS_URL='));
+
+    if (urlLine) {
+        // "PUBLIC_ASSETS_URL=" の部分を取り除き、引用符を削除して返す
+        return urlLine.split('=')[1]?.trim().replace(/^['"]|['"]$/g, '') || null;
+    }
+    return null;
+}
 
 export default function obsidianLinks(): AstroIntegration {
     return {
         name: 'astro-obsidian-links',
         hooks: {
             'astro:build:done': async ({ dir, pages }) => {
-                // .envファイルから環境変数を読み込む
-                const env = loadEnv(process.env.NODE_ENV || 'production', process.cwd(), '');
-                const baseUrl = env.PUBLIC_ASSETS_URL;
+                const baseUrl = getAssetsUrl();
 
                 if (!baseUrl) {
-                    console.warn('Obsidian Links Integration: PUBLIC_ASSETS_URL is not set in .env file. Skipping URL replacement.');
+                    console.warn('Obsidian Links Integration: PUBLIC_ASSETS_URL not found in .env file. Skipping URL replacement.');
                     return;
                 }
 
@@ -34,7 +48,6 @@ export default function obsidianLinks(): AstroIntegration {
                     let content = await fs.promises.readFile(filePath, 'utf-8');
                     let changed = false;
 
-                    // 画像リンクの置換
                     content = content.replace(WIKILINK_IMAGE_REGEX, (_match, fileName) => {
                         const altText = fileName.split('.').slice(0, -1).join('.');
                         console.log(`  - Replacing image link for: ${fileName}`);
@@ -42,7 +55,6 @@ export default function obsidianLinks(): AstroIntegration {
                         return `<img src="${baseUrl}/${fileName}" alt="${altText}">`;
                     });
 
-                    // 動画リンクの置換
                     content = content.replace(WIKILINK_VIDEO_REGEX, (_match, fileName) => {
                         console.log(`  - Replacing video link for: ${fileName}`);
                         changed = true;
