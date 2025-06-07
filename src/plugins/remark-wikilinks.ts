@@ -1,26 +1,34 @@
 // src/plugins/remark-wikilinks.ts
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Root, Paragraph } from 'mdast';
+// mdastから必要な型をインポートします
+import type { Root, Paragraph, Image, HTML, BlockContent } from 'mdast';
 import type { VFile } from 'vfile';
 import { visit } from 'unist-util-visit';
+// unistからParent型をインポートします
+import type { Parent } from 'unist';
 
-// ![[ファイル名]] という形式にマッチする正規表現
 const WIKILINK_REGEX = /!\[\[([^\]]+)\]\]/;
-
-// src/content/assets フォルダの絶対パス
-// process.cwd() はプロジェクトのルートディレクトリを指します (例: C:\Users\USER\tkwsnb-net)
 const ASSETS_DIR = path.resolve(process.cwd(), 'src/content/assets');
 
-// ファイルが存在するかどうかをチェックするヘルパー関数
-const fileExists = (fileName: string) => {
+const fileExists = (fileName: string): boolean => {
 	return fs.existsSync(path.join(ASSETS_DIR, fileName));
 };
 
 export function remarkWikiLinks() {
 	return (tree: Root, file: VFile) => {
-		visit(tree, 'paragraph', (node: Paragraph, index, parent) => {
-			// paragraphノードがテキストノード一つだけを含んでいるかチェック
+		// visitのコールバック引数を修正し、オプショナルな引数に対応
+		visit(tree, 'paragraph', (node: Paragraph, index?: number, parent?: Parent) => {
+			// --- エラー回避のためのチェック処理 ---
+			// 1. parentやindexが存在しない場合は何もしない
+			if (parent === undefined || parent === null || index === undefined || index === null) {
+				return;
+			}
+			// 2. file.pathが存在しない場合も何もしない
+			if (!file.path) {
+				return;
+			}
+			// 3. 段落が単一のテキストノードでない場合は対象外
 			if (node.children.length !== 1 || node.children[0]?.type !== 'text') {
 				return;
 			}
@@ -28,53 +36,44 @@ export function remarkWikiLinks() {
 			const textNode = node.children[0];
 			const match = textNode.value.match(WIKILINK_REGEX);
 
-			// Wikilink形式にマッチしない場合は何もしない
 			if (!match || !match[1]) {
 				return;
 			}
 
-			const fileName = match[1]; // 例: "cover.png"
+			const fileName = match[1];
 
-			// アセットフォルダにファイルが存在するか確認
 			if (fileExists(fileName)) {
 				const altText = fileName.split('.').slice(0, -1).join('.');
 				const extension = path.extname(fileName).toLowerCase();
-
-				// 現在処理中のMarkdownファイルのディレクトリを取得
 				const fileDir = path.dirname(file.path);
-				
-				// Markdownファイルからアセットファイルへの相対パスを計算
-				// これにより、Astroがパスを正しく解決できるようになる
 				const relativePath = path.relative(fileDir, path.join(ASSETS_DIR, fileName)).replace(/\\/g, '/');
 
-
-				// 画像ファイルの場合
+				// --- ノードの置換処理を修正 ---
+				// 画像の場合
 				if (['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'].includes(extension)) {
-					// ParagraphノードをImageノードに変換する
-					// これがAstroの画像最適化をトリガーする最も良い方法
-					const imageNode = {
+					const imageNode: Image = {
 						type: 'image',
 						url: relativePath,
 						alt: altText,
 						title: null,
 					};
-					// 親ノードの子要素を新しいimageNodeで置き換える
-					parent.children.splice(index, 1, imageNode);
-				}
-				// 動画ファイルの場合
+					// [修正点] 段落ノード(node)の中身(children)を画像ノードに置き換える
+					// これで <p><img ...></p> が生成され、Astroが<p>を自動で取り除いてくれます。
+					node.children = [imageNode];
+
+				} 
+				// 動画の場合
 				else if (['.mp4', '.webm'].includes(extension)) {
-					// 動画は標準のMarkdown記法がないため、HTMLタグを直接生成する
-					const videoHtml = `<video src="${relativePath}" controls autoplay muted loop playsinline></video>`;
-					const htmlNode = {
+					const videoHtml = `<video src="${relativePath}" controls autoplay muted loop playsinline style="width: 100%; max-width: 100%; border-radius: 8px;"></video>`;
+					const htmlNode: HTML = {
 						type: 'html',
 						value: videoHtml,
 					};
-					// 親ノードの子要素を新しいhtmlNodeで置き換える
-					parent.children.splice(index, 1, htmlNode);
+					// [修正点] 段落ノード(Paragraph)をHTMLブロックノードで置き換える
+					// (htmlNode as BlockContent)で型エラーを解決
+					parent.children.splice(index, 1, htmlNode as BlockContent);
 				}
-
 			} else {
-				// ファイルが見つからなかった場合に警告を出す
 				console.warn(`[remark-wikilinks] File not found in "src/content/assets/": ${fileName}`);
 			}
 		});
