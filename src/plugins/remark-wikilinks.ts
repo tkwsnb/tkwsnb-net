@@ -52,12 +52,12 @@ const findFile = (baseDir: string, fileName: string): { filePath: string; webPat
     const possibleExtensions = ["", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".mp4", ".webm"];
 
     for (const dir of searchDirs) {
-        for (the ext of possibleExtensions) {
+        // ▼▼▼ ここが修正点です ▼▼▼
+        for (const ext of possibleExtensions) {
             const filePath = path.join(dir, `${fileName}${ext}`);
             if (fs.existsSync(filePath)) {
                 // publicディレクトリ内のファイルはルートからのパス、それ以外はプロジェクトルートからの相対パス
                 const isPublic = dir.startsWith(path.resolve(process.cwd(), "public"));
-                const webPathPrefix = isPublic ? "" : "/src"; // src/assets/を Astroが処理できるように
                 const relativeDir = path.relative(process.cwd(), dir);
                 const webPath = `/${path.join(relativeDir, `${fileName}${ext}`)}`.replace(/\\/g, '/');
 
@@ -90,7 +90,7 @@ export function remarkWikiLinks() {
 			const fileNameFromLink = match[1];
 			const normalizedFileName = normalizeFileName(fileNameFromLink);
 			const markdownDir = path.dirname(file.path);
-      const foundFile = findFile(markdownDir, normalizedFileName);
+            const foundFile = findFile(markdownDir, normalizedFileName);
 
 			if (foundFile) {
                 const { filePath, webPath } = foundFile;
