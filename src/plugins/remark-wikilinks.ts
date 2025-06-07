@@ -1,8 +1,8 @@
-import fs from "node:fs";
-import path from "node:path";
-import type { Paragraph, Root } from "mdast";
-import type { VFile } from "vfile";
-import { visit } from "unist-util-visit";
+import fs from 'node:fs';
+import path from 'node:path';
+import type { Root, Paragraph } from 'mdast';
+import type { VFile } from 'vfile';
+import { visit } from 'unist-util-visit';
 
 const WIKILINK_REGEX = /^!\[\[([^\]]+)\]\]$/;
 
@@ -10,34 +10,29 @@ const normalizeFileName = (name: string): string => {
 	return name.replace(/\.md$/, "").replace(/\s/g, "-");
 };
 
-// 型定義: mdxJsxFlowElementやhtmlノードはBlockContentとして扱える
-type BlockContent = Exclude<Root['children'][number], { type: 'text' }>;
+// HTMLノードを生成する関数 (画像・動画共通)
+const createHtmlNode = (filePath: string, webPath: string): { type: 'html', value: string } | null => {
+    const extension = path.extname(filePath).toLowerCase();
+    const altText = path.basename(filePath, extension);
 
-const createFileNode = (filePath: string, webPath: string): BlockContent | null => {
-	const extension = path.extname(filePath).toLowerCase();
-	const altText = path.basename(filePath, extension);
+    // 画像ファイルの場合、<img> タグを生成
+    if (['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'].includes(extension)) {
+        return {
+            type: 'html',
+            value: `<img src="${webPath}" alt="${altText}">`,
+        };
+    }
 
-	if ([".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"].includes(extension)) {
-		return {
-			type: "mdxJsxFlowElement",
-			name: "Image",
-			attributes: [
-				{ type: "mdxJsxAttribute", name: "src", value: webPath },
-				{ type: "mdxJsxAttribute", name: "alt", value: altText },
-			],
-			children: [],
-		};
-	}
+    // 動画ファイルの場合、<video> タグを生成
+    if (['.mp4', '.webm'].includes(extension)) {
+        return {
+            type: 'html',
+            value: `<video src="${webPath}" controls autoplay muted loop playsinline></video>`,
+        };
+    }
 
-	if ([".mp4", ".webm"].includes(extension)) {
-		return {
-			type: "html",
-			value: `<video src="${webPath}" controls autoplay muted loop playsinline></video>`,
-		};
-	}
-
-	return null;
-};
+    return null;
+}
 
 const findFile = (baseDir: string, fileName: string): { filePath: string; webPath: string } | null => {
     const searchDirs = [
@@ -54,10 +49,9 @@ const findFile = (baseDir: string, fileName: string): { filePath: string; webPat
                 let webPath;
 
                 if (isPublic) {
-                    // public内のファイルはルートからの絶対パス
                     webPath = '/' + path.relative(path.resolve(process.cwd(), 'public'), filePath).replace(/\\/g, '/');
                 } else {
-                    // src内のアセットはAstroが処理できるよう、プロジェクトルートからのパス
+                    // src内のアセットはAstroがビルド時に処理する。devサーバーでは/src/assets...のパスが必要。
                     webPath = '/' + path.relative(process.cwd(), filePath).replace(/\\/g, '/');
                 }
                 return { filePath, webPath };
@@ -69,38 +63,34 @@ const findFile = (baseDir: string, fileName: string): { filePath: string; webPat
 
 export function remarkWikiLinks() {
 	return (tree: Root, file: VFile) => {
-		// visitに parent と index を渡してもらう
-		visit(tree, "paragraph", (node: Paragraph, index, parent) => {
-			// 親がない、またはインデックスが不正な場合はスキップ (ルートノードなど)
-			if (!parent || typeof index !== "number") {
-				return;
-			}
-			if (!node.children || node.children.length !== 1 || node.children[0]?.type !== "text") {
-				return;
-			}
-			
+		visit(tree, 'paragraph', (node: Paragraph, index, parent) => {
+			if (!parent || typeof index !== 'number') return;
+			if (!node.children || node.children.length !== 1 || node.children[0]?.type !== 'text') return;
+
 			const textNode = node.children[0];
 			const match = textNode.value.match(WIKILINK_REGEX);
-			if (!match || !match[1]) {
-				return;
-			}
+			if (!match || !match[1]) return;
 			
 			const fileNameFromLink = match[1];
+
+			// `file.path` が undefined の可能性に対応
+			const currentFilePath = file.history[0];
+			if (!currentFilePath) return;
+
+			const markdownDir = path.dirname(currentFilePath);
 			const normalizedFileName = normalizeFileName(fileNameFromLink);
-			const markdownDir = path.dirname(file.path);
             const foundFile = findFile(markdownDir, normalizedFileName);
 
 			if (foundFile) {
                 const { filePath, webPath } = foundFile;
-				const newNode = createFileNode(filePath, webPath);
+				const newNode = createHtmlNode(filePath, webPath);
 
 				if (newNode) {
-					// ★★★ これが最も重要で安全な修正点 ★★★
-					// 親のchildren配列内で、現在のノード(paragraph)を新しいノードに置き換える
+					// 親のchildren配列内で、現在のノードを新しいHTMLノードに置き換える
 					parent.children[index] = newNode;
 				}
 			} else {
-				console.warn(`[remark-wikilinks] File not found for wikilink: "![[${fileNameFromLink}]]" (normalized to: ${normalizedFileName})`);
+				console.warn(`[remark-wikilinks] File not found: "![[${fileNameFromLink}]]" (from: ${currentFilePath})`);
 			}
 		});
 	};
