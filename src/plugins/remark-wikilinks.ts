@@ -1,10 +1,9 @@
-// src/plugins/remark-wikilinks.ts (v4 - 型安全性を強化)
+// src/plugins/remark-wikilinks.ts (v5 - flatMapによる堅牢な実装)
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Root, Paragraph, Image, Html, PhrasingContent } from 'mdast';
 import type { VFile } from 'vfile';
 import { visit } from 'unist-util-visit';
-import type { Parent } from 'unist';
 
 const WIKILINK_REGEX = /!\[\[([^\]]+)\]\]/g;
 const ASSETS_DIR = path.resolve(process.cwd(), 'src/content/assets');
@@ -19,70 +18,64 @@ export function remarkWikiLinks() {
 			if (!file?.path) {
 				return;
 			}
-			
-			const newChildren: PhrasingContent[] = [];
-			let hasChanged = false; // 変換が行われたかどうかのフラグ
 
-			for (const child of node.children) {
+			// flatMap を使って、テキストノードを安全に複数のノードに展開する
+			const newChildren = node.children.flatMap((child): PhrasingContent | PhrasingContent[] => {
+				// テキストノード以外は、何もせずそのまま返す
 				if (child.type !== 'text') {
-					newChildren.push(child);
-					continue;
+					return [child]; // 配列で返す
 				}
 
 				const text = child.value;
+				const parts: PhrasingContent[] = [];
 				let lastIndex = 0;
-				WIKILINK_REGEX.lastIndex = 0; // 正規表現のインデックスをリセット
+				WIKILINK_REGEX.lastIndex = 0;
 				let match: RegExpExecArray | null;
 
 				while ((match = WIKILINK_REGEX.exec(text)) !== null) {
-					hasChanged = true;
-					const [fullMatch, fileName] = match; // マッチ全体とキャプチャグループを取得
-
-					// ---【重要】fileNameの存在チェックを追加 ---
+					const [fullMatch, fileName] = match;
 					if (fileName === undefined) continue;
 
-					// マッチした部分より前のテキストを追加
+					// マッチ部分より前のテキストを追加
 					if (match.index > lastIndex) {
-						newChildren.push({ type: 'text', value: text.slice(lastIndex, match.index) });
+						parts.push({ type: 'text', value: text.slice(lastIndex, match.index) });
 					}
-
+					
+					// wikilinkを処理
 					if (fileExists(fileName)) {
 						console.log(`[remark-wikilinks] Found & converting: ${fullMatch} in ${path.basename(file.path)}`);
-
 						const altText = fileName.split('.').slice(0, -1).join('.');
 						const extension = path.extname(fileName).toLowerCase();
 						const fileDir = path.dirname(file.path);
 						const relativePath = path.relative(fileDir, path.join(ASSETS_DIR, fileName)).replace(/\\/g, '/');
 
 						if (['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'].includes(extension)) {
-							const imageNode: Image = { type: 'image', url: relativePath, alt: altText, title: null };
-							newChildren.push(imageNode);
+							parts.push({ type: 'image', url: relativePath, alt: altText, title: null });
 						} else if (['.mp4', '.webm'].includes(extension)) {
 							const videoHtml = `<video src="${relativePath}" controls autoplay muted loop playsinline style="width: 100%; max-width: 100%; border-radius: 8px;"></video>`;
-							// 'HTML' は 'Html' に名称変更されたため修正
-							const htmlNode: Html = { type: 'html', value: videoHtml };
-							newChildren.push(htmlNode);
+							parts.push({ type: 'html', value: videoHtml });
 						} else {
-							newChildren.push({ type: 'text', value: fullMatch });
+							parts.push({ type: 'text', value: fullMatch });
 						}
 					} else {
 						console.warn(`[remark-wikilinks] File not found for ${fullMatch}. Keeping original text.`);
-						newChildren.push({ type: 'text', value: fullMatch });
+						parts.push({ type: 'text', value: fullMatch });
 					}
-					
+
 					lastIndex = match.index + fullMatch.length;
 				}
 
-				// 残りのテキストを追加
+				// 最後のマッチ以降のテキストを追加
 				if (lastIndex < text.length) {
-					newChildren.push({ type: 'text', value: text.slice(lastIndex) });
+					parts.push({ type: 'text', value: text.slice(lastIndex) });
 				}
-			}
+				
+				// 何も変換されなかった場合は元のノードを、変換された場合は新しいノードの配列を返す
+				return parts.length > 0 ? parts : [child];
+			});
 
-			// 変更があった場合のみ、子ノードを置き換える
-			if (hasChanged) {
-				node.children = newChildren;
-			}
+			// 新しく生成したchildrenで、元のノードを更新
+			node.children = newChildren;
 		});
 	};
 }
