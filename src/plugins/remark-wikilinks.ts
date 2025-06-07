@@ -1,62 +1,81 @@
+// src/plugins/remark-wikilinks.ts
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Root, Paragraph } from 'mdast';
 import type { VFile } from 'vfile';
 import { visit } from 'unist-util-visit';
 
-const WIKILINK_REGEX = /^!\[\[([^\]]+)\]\]$/;
+// ![[ファイル名]] という形式にマッチする正規表現
+const WIKILINK_REGEX = /!\[\[([^\]]+)\]\]/;
 
-// src/assets フォルダ内からファイルを探す関数
-const findFileInAssets = (fileName: string): { webPath: string; altText: string } | null => {
-    const assetsDir = path.resolve(process.cwd(), "src/assets");
-    const filePath = path.join(assetsDir, fileName);
+// src/content/assets フォルダの絶対パス
+// process.cwd() はプロジェクトのルートディレクトリを指します (例: C:\Users\USER\tkwsnb-net)
+const ASSETS_DIR = path.resolve(process.cwd(), 'src/content/assets');
 
-    if (fs.existsSync(filePath)) {
-        // Astroがsrc/assets内の画像を処理できるよう、Web用のパスを生成
-        const webPath = `/src/assets/${fileName}`;
-        // altテキストはファイル名から拡張子を除いたもの
-        const altText = fileName.split('.').slice(0, -1).join('.');
-        return { webPath, altText };
-    }
-    
-    return null;
+// ファイルが存在するかどうかをチェックするヘルパー関数
+const fileExists = (fileName: string) => {
+	return fs.existsSync(path.join(ASSETS_DIR, fileName));
 };
 
 export function remarkWikiLinks() {
-	return (tree: Root, _file: VFile) => {
-		visit(tree, 'paragraph', (node: Paragraph) => {
-			if (!node.children || node.children.length !== 1 || node.children[0]?.type !== 'text') {
+	return (tree: Root, file: VFile) => {
+		visit(tree, 'paragraph', (node: Paragraph, index, parent) => {
+			// paragraphノードがテキストノード一つだけを含んでいるかチェック
+			if (node.children.length !== 1 || node.children[0]?.type !== 'text') {
 				return;
 			}
 
 			const textNode = node.children[0];
 			const match = textNode.value.match(WIKILINK_REGEX);
+
+			// Wikilink形式にマッチしない場合は何もしない
 			if (!match || !match[1]) {
 				return;
 			}
-			
-			const fileNameFromLink = match[1]; // 例: "hoge.png"
 
-            // 修正点: `fileNameFromLink` を直接使ってファイルを探す
-            const foundFile = findFileInAssets(fileNameFromLink);
+			const fileName = match[1]; // 例: "cover.png"
 
-			if (foundFile) {
-                const { webPath, altText } = foundFile;
-                const extension = path.extname(webPath).toLowerCase();
-                let htmlValue = '';
+			// アセットフォルダにファイルが存在するか確認
+			if (fileExists(fileName)) {
+				const altText = fileName.split('.').slice(0, -1).join('.');
+				const extension = path.extname(fileName).toLowerCase();
 
-                if (['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'].includes(extension)) {
-                    htmlValue = `<img src="${webPath}" alt="${altText}">`;
-                } else if (['.mp4', '.webm'].includes(extension)) {
-                    htmlValue = `<video src="${webPath}" controls autoplay muted loop playsinline></video>`;
-                }
+				// 現在処理中のMarkdownファイルのディレクトリを取得
+				const fileDir = path.dirname(file.path);
+				
+				// Markdownファイルからアセットファイルへの相対パスを計算
+				// これにより、Astroがパスを正しく解決できるようになる
+				const relativePath = path.relative(fileDir, path.join(ASSETS_DIR, fileName)).replace(/\\/g, '/');
 
-				if (htmlValue) {
-                    node.children = [{ type: 'html', value: htmlValue }];
+
+				// 画像ファイルの場合
+				if (['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'].includes(extension)) {
+					// ParagraphノードをImageノードに変換する
+					// これがAstroの画像最適化をトリガーする最も良い方法
+					const imageNode = {
+						type: 'image',
+						url: relativePath,
+						alt: altText,
+						title: null,
+					};
+					// 親ノードの子要素を新しいimageNodeで置き換える
+					parent.children.splice(index, 1, imageNode);
 				}
+				// 動画ファイルの場合
+				else if (['.mp4', '.webm'].includes(extension)) {
+					// 動画は標準のMarkdown記法がないため、HTMLタグを直接生成する
+					const videoHtml = `<video src="${relativePath}" controls autoplay muted loop playsinline></video>`;
+					const htmlNode = {
+						type: 'html',
+						value: videoHtml,
+					};
+					// 親ノードの子要素を新しいhtmlNodeで置き換える
+					parent.children.splice(index, 1, htmlNode);
+				}
+
 			} else {
-				// ログをより詳細に
-				console.warn(`[remark-wikilinks] File not found. Searched for "${fileNameFromLink}" in "src/assets/"`);
+				// ファイルが見つからなかった場合に警告を出す
+				console.warn(`[remark-wikilinks] File not found in "src/content/assets/": ${fileName}`);
 			}
 		});
 	};
