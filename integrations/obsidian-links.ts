@@ -1,3 +1,4 @@
+// /integrations/obsidian-links.ts (最終完成版)
 import type { AstroIntegration } from 'astro';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -38,11 +39,13 @@ export default function obsidianLinks(): AstroIntegration {
                     let changed = false;
                     content = content.replace(WIKILINK_IMAGE_REGEX, (_match, fileName) => {
                         changed = true;
-                        return `<img src="${baseUrl}/${fileName}" alt="${fileName.split('.').slice(0, -1).join('')}">`;
+                        // ↓ R2上のパスに合わせて "assets/" を追加する
+                        return `<img src="${baseUrl}/assets/${fileName}" alt="${fileName.split('.').slice(0, -1).join('')}">`; // ←【最後の修正箇所】
                     });
                     content = content.replace(WIKILINK_VIDEO_REGEX, (_match, fileName) => {
                         changed = true;
-                        return `<video src="${baseUrl}/${fileName}" controls autoplay muted loop playsinline style="width: 100%; max-width: 100%; border-radius: 8px;"></video>`;
+                        // ↓ R2上のパスに合わせて "assets/" を追加する
+                        return `<video src="${baseUrl}/assets/${fileName}" controls autoplay muted loop playsinline style="width: 100%; max-width: 100%; border-radius: 8px;"></video>`; // ←【最後の修正箇所】
                     });
                     if (changed) {
                         await fs.promises.writeFile(filePath, content, 'utf-8');
