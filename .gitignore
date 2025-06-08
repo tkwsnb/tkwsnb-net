@@ -29,3 +29,6 @@ src/content/assets
 # obsidian vault
 src/content/.obsidian
 src/content/templates
+
+deploy_key
+.tmp_deploy_key
