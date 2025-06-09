@@ -18,8 +18,8 @@ function getAssetsUrl(): string | null {
     return null;
 }
 
-const WIKILINK_IMAGE_REGEX = /<p>!\[\[((?:(?!\.\.).)+?\.(?:png|jpg|jpeg|webp|gif|svg))\]\]<\/p>/g;
-const WIKILINK_VIDEO_REGEX = /<p>!\[\[((?:(?!\.\.).)+?\.(?:mp4|webm))\]\]<\/p>/g;
+const WIKILINK_IMAGE_REGEX = /(?:<p>)?!\[\[((?:(?!\.\.).)+?\.(?:png|jpg|jpeg|webp|gif|svg))\]\](?:<\/p>)?/g;
+const WIKILINK_VIDEO_REGEX = /(?:<p>)?!\[\[((?:(?!\.\.).)+?\.(?:mp4|webm))\]\](?:<\/p>)?/g;
 
 export default function obsidianLinks(): AstroIntegration {
     return {
