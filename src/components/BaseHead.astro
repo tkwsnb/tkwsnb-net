@@ -73,12 +73,16 @@ const socialImageURL = new URL(ogImage ? ogImage : "/social-card.png", Astro.url
 <link href="/rss.xml" title="Blog" rel="alternate" type="application/rss+xml" />
 <link href="/notes/rss.xml" title="Notes" rel="alternate" type="application/rss+xml" />
 
-{/* Webmentions */}
+{/* Webmentions & IndieAuth */}
 {
 	WEBMENTION_URL && (
 		<>
+			{/* Webmention用のタグ */}
 			<link href={WEBMENTION_URL} rel="webmention" />
 			{WEBMENTION_PINGBACK && <link href={WEBMENTION_PINGBACK} rel="pingback" />}
+
+			{/* IndieLogin認証用のタグ */}
+			<link rel="me" href="https://github.com/tkwsnb" />
 		</>
 	)
 }
