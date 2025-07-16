@@ -8,9 +8,9 @@ export const siteConfig: SiteConfig = {
 	date: {
 		locale: "ja-JP",
 		options: {
-			day: "numeric",
-			month: "short",
 			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
 		},
 	},
 	// Used as the default description meta property and webmanifest description
