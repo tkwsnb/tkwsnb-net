@@ -1,13 +1,20 @@
 ---
 import { getCollection } from "astro:content";
+import { getFormattedDate } from "@/utils/date";
 
 import Note from "@/components/note/Note.astro";
+import NotePagination from "@/components/note/NotePagination.astro";
 import PageLayout from "@/layouts/Base.astro";
 import type { GetStaticPaths, InferGetStaticPropsType } from "astro";
 
-// if you're using an adaptor in SSR mode, getStaticPaths wont work -> https://docs.astro.build/en/guides/routing/#modifying-the-slug-example-for-ssr
+/**
+ * 静的パスを生成する
+ * SSRモードでアダプターを使用している場合、getStaticPathsは動作しません
+ * @see https://docs.astro.build/en/guides/routing/#modifying-the-slug-example-for-ssr
+ */
 export const getStaticPaths = (async () => {
 	const allNotes = await getCollection("note");
+
 	return allNotes.map((note) => ({
 		params: { slug: note.id },
 		props: { note },
@@ -18,14 +25,24 @@ export type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { note } = Astro.props;
 
-const meta = {
-	description:
-		note.data.description ||
-		`Read about my note posted on: ${note.data.publishDate.toLocaleDateString()}`,
-	title: note.data.title,
-};
+/**
+ * ページのメタデータを生成する
+ * @param note ノートデータ
+ * @returns メタデータオブジェクト
+ */
+function generateMeta(note: Props["note"]) {
+	const formattedDate = getFormattedDate(note.data.publishDate);
+
+	return {
+		title: note.data.title,
+		description: note.data.description || `${formattedDate}に投稿された記事です。`,
+	};
+}
+
+const meta = generateMeta(note);
 ---
 
 <PageLayout meta={meta}>
 	<Note as="h1" note={note} />
+	<NotePagination currentNote={note} />
 </PageLayout>

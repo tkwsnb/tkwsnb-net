@@ -1,0 +1,313 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import { collectionDateSort } from "@/utils/date";
+
+interface Props {
+	currentNote: CollectionEntry<"note">;
+}
+
+const { currentNote } = Astro.props;
+
+/**
+ * 現在のnoteの前後のnoteを取得する
+ * @param currentNote 現在のnote
+ * @returns 前後のnoteオブジェクト
+ */
+async function getAdjacentNotes(currentNote: CollectionEntry<"note">) {
+	const allNotes = await getCollection("note");
+	const sortedNotes = allNotes.sort(collectionDateSort);
+	
+	const currentIndex = sortedNotes.findIndex(note => note.id === currentNote.id);
+	
+	if (currentIndex === -1) {
+		return { prevNote: null, nextNote: null };
+	}
+	
+	return {
+		prevNote: currentIndex > 0 ? sortedNotes[currentIndex - 1] : null,
+		nextNote: currentIndex < sortedNotes.length - 1 ? sortedNotes[currentIndex + 1] : null,
+	};
+}
+
+const { prevNote, nextNote } = await getAdjacentNotes(currentNote);
+
+// ナビゲーションが必要かどうかを判定
+const hasNavigation = prevNote || nextNote;
+---
+
+{hasNavigation && (
+	<nav 
+		class="note-pagination" 
+		aria-label="記事ナビゲーション"
+		role="navigation"
+	>
+		<div class="note-pagination-container">
+			<!-- 前の記事 -->
+			<div class="note-nav-section">
+				{prevNote ? (
+					<a 
+						href={`/notes/${prevNote.id}/`}
+						class="note-nav-link note-nav-prev"
+						aria-label={`前の記事: ${prevNote.data.title}`}
+						data-astro-prefetch
+					>
+						<div class="note-nav-direction">
+							<span class="note-nav-arrow" aria-hidden="true">&larr;</span>
+							<span class="note-nav-label">前の記事</span>
+						</div>
+						<div class="note-nav-title">
+							{prevNote.data.title}
+						</div>
+					</a>
+				) : (
+					<div class="note-nav-placeholder" aria-hidden="true"></div>
+				)}
+			</div>
+
+			<!-- 一覧に戻る -->
+			<div class="note-nav-center">
+				<a 
+					href="/notes/"
+					class="note-nav-home"
+					aria-label="記事一覧に戻る"
+					title="記事一覧"
+					data-astro-prefetch
+				>
+					<svg 
+						class="note-nav-home-icon" 
+						fill="none" 
+						stroke="currentColor" 
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
+						<path 
+							stroke-linecap="round" 
+							stroke-linejoin="round" 
+							stroke-width="2" 
+							d="M4 6h16M4 12h16M4 18h16" 
+						/>
+					</svg>
+					<span class="sr-only">記事一覧</span>
+				</a>
+			</div>
+
+			<!-- 次の記事 -->
+			<div class="note-nav-section">
+				{nextNote ? (
+					<a 
+						href={`/notes/${nextNote.id}/`}
+						class="note-nav-link note-nav-next"
+						aria-label={`次の記事: ${nextNote.data.title}`}
+						data-astro-prefetch
+					>
+						<div class="note-nav-direction">
+							<span class="note-nav-label">次の記事</span>
+							<span class="note-nav-arrow" aria-hidden="true">&rarr;</span>
+						</div>
+						<div class="note-nav-title">
+							{nextNote.data.title}
+						</div>
+					</a>
+				) : (
+					<div class="note-nav-placeholder" aria-hidden="true"></div>
+				)}
+			</div>
+		</div>
+	</nav>
+)}
+
+<style>
+	/* ベースレイアウト */
+	.note-pagination {
+		margin-top: 3rem;
+		padding-top: 2rem;
+		border-top: 1px solid #e5e7eb;
+	}
+
+	:global([data-theme="dark"]) .note-pagination {
+		border-top-color: #374151;
+	}
+
+	.note-pagination-container {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.note-nav-section {
+		flex: 1;
+		display: flex;
+	}
+
+	.note-nav-center {
+		flex-shrink: 0;
+	}
+
+	/* ナビゲーションリンク */
+	.note-nav-link {
+		display: flex;
+		flex-direction: column;
+		padding: 1rem;
+		border-radius: 0.5rem;
+		transition: all 0.2s ease-in-out;
+		text-decoration: none;
+		border: 1px solid transparent;
+		max-width: 200px;
+		min-height: 80px;
+		width: 100%;
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--color-accent) 5%, transparent);
+			border-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+		}
+
+		&:focus {
+			outline: none;
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 50%, transparent);
+		}
+	}
+
+	.note-nav-prev {
+		text-align: left;
+	}
+
+	.note-nav-next {
+		text-align: right;
+		margin-left: auto;
+	}
+
+	/* ナビゲーション方向表示 */
+	.note-nav-direction {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.875rem;
+		color: var(--color-accent);
+		margin-bottom: 0.5rem;
+	}
+
+	.note-nav-next .note-nav-direction {
+		justify-content: flex-end;
+	}
+
+	.note-nav-arrow {
+		font-weight: 700;
+		font-size: 1rem;
+	}
+
+	.note-nav-label {
+		font-weight: 500;
+		white-space: nowrap;
+	}
+
+	/* タイトル表示 */
+	.note-nav-title {
+		font-size: 0.875rem;
+		line-height: 1.25;
+		color: var(--color-global-text);
+		overflow: hidden;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		word-break: break-word;
+	}
+
+	/* ホームボタン */
+	.note-nav-home {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.75rem;
+		border-radius: 50%;
+		transition: all 0.2s ease-in-out;
+		color: var(--color-accent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+		text-decoration: none;
+
+		&:hover {
+			background-color: var(--color-accent);
+			color: white;
+			transform: scale(1.05);
+		}
+
+		&:focus {
+			outline: none;
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 50%, transparent);
+		}
+	}
+
+	.note-nav-home-icon {
+		width: 1.5rem;
+		height: 1.5rem;
+	}
+
+	/* プレースホルダー */
+	.note-nav-placeholder {
+		width: 200px;
+		min-height: 80px;
+		flex-shrink: 0;
+	}
+
+	/* レスポンシブデザイン */
+	@media (max-width: 768px) {
+		.note-pagination {
+			margin-top: 2rem;
+			padding-top: 1.5rem;
+		}
+
+		.note-pagination-container {
+			gap: 0.75rem;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.note-nav-link,
+		.note-nav-placeholder {
+			max-width: 140px;
+			min-height: 70px;
+			padding: 0.75rem;
+		}
+
+		.note-nav-title {
+			font-size: 0.8rem;
+			line-height: 1.2;
+		}
+
+		.note-nav-direction {
+			font-size: 0.8rem;
+			margin-bottom: 0.25rem;
+		}
+
+		.note-nav-home {
+			padding: 0.625rem;
+		}
+
+		.note-nav-home-icon {
+			width: 1.25rem;
+			height: 1.25rem;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.note-pagination-container {
+			flex-direction: column;
+			gap: 1rem;
+		}
+
+		.note-nav-section {
+			width: 100%;
+			justify-content: center;
+		}
+
+		.note-nav-link,
+		.note-nav-placeholder {
+			max-width: 280px;
+		}
+
+		.note-nav-next {
+			margin-left: 0;
+		}
+	}
+</style>
