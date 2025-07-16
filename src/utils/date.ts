@@ -1,9 +1,7 @@
 import type { CollectionEntry } from "astro:content";
-import { siteConfig } from "@/site.config";
 
 export function getFormattedDate(
 	date: Date | undefined,
-	options?: Intl.DateTimeFormatOptions,
 ): string {
 	if (date === undefined) {
 		return "Invalid Date";
