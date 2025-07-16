@@ -5,35 +5,59 @@ import type { HTMLTag, Polymorphic } from "astro/types";
 
 type Props<Tag extends HTMLTag> = Polymorphic<{ as: Tag }> & {
 	note: CollectionEntry<"note">;
-	isPreview?: boolean | undefined;
+	isPreview?: boolean;
 };
 
 const { as: Tag = "div", note, isPreview = false } = Astro.props;
 const { Content } = await render(note);
+
+// データの存在チェック
+const hasTitle = note.data.title;
+const hasPublishDate = note.data.publishDate;
+
+// スタイルクラスの計算
+const articleClasses = [
+	isPreview && "inline-grid rounded-md bg-[rgb(240,240,240)] px-4 py-3 dark:bg-[rgb(33,35,38)]",
+].filter(Boolean);
+
+const titleClasses = ["title", isPreview && "text-base"].filter(Boolean);
+
+const contentClasses = [
+	"prose prose-sm prose-cactus mt-4 max-w-none [&>p:last-of-type]:mb-0",
+	isPreview && "line-clamp-6",
+].filter(Boolean);
 ---
 
 <article
-	class:list={[
-		isPreview && "inline-grid rounded-md bg-[rgb(240,240,240)] px-4 py-3 dark:bg-[rgb(33,35,38)]",
-	]}
-	data-pagefind-body={isPreview ? false : true}
+	class:list={articleClasses}
+	data-pagefind-body={!isPreview}
+	role="article"
+	aria-labelledby={`note-title-${note.id}`}
 >
-	<Tag class="title" class:list={{ "text-base": isPreview }}>
-		{
-			isPreview ? (
-				<a class="cactus-link" href={`/notes/${note.id}/`}>
-					{note.data.title}
-				</a>
-			) : (
-				<>{note.data.title}</>
-			)
-		}
-	</Tag>
-	<FormattedDate date={note.data.publishDate} />
-	<div
-		class="prose prose-sm prose-cactus mt-4 max-w-none [&>p:last-of-type]:mb-0"
-		class:list={{ "line-clamp-6": isPreview }}
-	>
+	<!-- ノートタイトル -->
+	{
+		hasTitle && (
+			<Tag class:list={titleClasses} id={`note-title-${note.id}`}>
+				{isPreview ? (
+					<a
+						class="cactus-link"
+						href={`/notes/${note.id}/`}
+						aria-label={`ノート「${note.data.title}」を読む`}
+					>
+						{note.data.title}
+					</a>
+				) : (
+					note.data.title
+				)}
+			</Tag>
+		)
+	}
+
+	<!-- 公開日 -->
+	{hasPublishDate && <FormattedDate date={note.data.publishDate} fallback="日付不明" />}
+
+	<!-- ノート内容 -->
+	<div class:list={contentClasses}>
 		<Content />
 	</div>
 </article>

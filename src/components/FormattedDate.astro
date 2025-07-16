@@ -1,15 +1,21 @@
 ---
-import { getFormattedDate } from "@/utils/date";
+import { getFormattedDate, isValidDate } from "@/utils/date";
 import type { HTMLAttributes } from "astro/types";
 
-type Props = HTMLAttributes<"time"> & {
+interface Props extends HTMLAttributes<"time"> {
 	date: Date;
-};
+	/** 日付が無効な場合に表示するフォールバックテキスト */
+	fallback?: string;
+}
 
-const { date, ...attrs } = Astro.props;
+const { date, fallback = "日付不明", ...attrs } = Astro.props;
 
-const postDate = getFormattedDate(date);
-const ISO = date.toISOString();
+// 日付の妥当性チェック
+const isValid = isValidDate(date);
+const formattedDate = isValid ? getFormattedDate(date) : fallback;
+const isoString = isValid ? date.toISOString() : undefined;
 ---
 
-<time datetime={ISO} title={ISO} {...attrs}>{postDate}</time>
+<time datetime={isoString} title={isoString || formattedDate} {...attrs}>
+	{formattedDate}
+</time>
