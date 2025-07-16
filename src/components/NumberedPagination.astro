@@ -1,0 +1,175 @@
+---
+import type { Page } from "astro";
+
+interface Props {
+	page: Page<any>;
+	baseUrl: string;
+}
+
+const { page, baseUrl } = Astro.props;
+
+const MAX_VISIBLE_PAGES = 5;
+const ELLIPSIS = "...";
+
+/**
+ * ページネーションで表示するページ番号のリストを生成
+ * @param currentPage 現在のページ番号
+ * @param totalPages 総ページ数
+ * @returns 表示するページ番号の配列（省略記号を含む）
+ */
+function generatePageNumbers(currentPage: number, totalPages: number): (number | string)[] {
+	if (totalPages <= MAX_VISIBLE_PAGES) {
+		return Array.from({ length: totalPages }, (_, i) => i + 1);
+	}
+
+	const pages: (number | string)[] = [];
+	const halfVisible = Math.floor(MAX_VISIBLE_PAGES / 2);
+	let start = Math.max(1, currentPage - halfVisible);
+	let end = Math.min(totalPages, currentPage + halfVisible);
+
+	// 範囲を調整して常にMAX_VISIBLE_PAGES個表示
+	if (end - start + 1 < MAX_VISIBLE_PAGES) {
+		if (start === 1) {
+			end = Math.min(totalPages, start + MAX_VISIBLE_PAGES - 1);
+		} else {
+			start = Math.max(1, end - MAX_VISIBLE_PAGES + 1);
+		}
+	}
+
+	// 最初のページと省略記号を追加
+	if (start > 1) {
+		pages.push(1);
+		if (start > 2) {
+			pages.push(ELLIPSIS);
+		}
+	}
+
+	// 中央のページ群を追加
+	for (let i = start; i <= end; i++) {
+		pages.push(i);
+	}
+
+	// 最後のページと省略記号を追加
+	if (end < totalPages) {
+		if (end < totalPages - 1) {
+			pages.push(ELLIPSIS);
+		}
+		pages.push(totalPages);
+	}
+
+	return pages;
+}
+
+/**
+ * ページ番号からURLを生成
+ * @param pageNum ページ番号
+ * @returns ページのURL
+ */
+function getPageUrl(pageNum: number): string {
+	return pageNum === 1 ? baseUrl : `${baseUrl}${pageNum}/`;
+}
+
+const pageNumbers = generatePageNumbers(page.currentPage, page.lastPage);
+---
+
+{
+	page.lastPage > 1 && (
+		<nav class="mt-8 flex items-center justify-center gap-1" aria-label="ページネーション">
+			{/* 前のページボタン */}
+			{page.url.prev && (
+				<a href={page.url.prev} class="pagination-btn" aria-label="前のページ" data-astro-prefetch>
+					&lt;&lt;
+				</a>
+			)}
+
+			{/* ページ番号リスト */}
+			{pageNumbers.map((pageNum) => {
+				if (pageNum === ELLIPSIS) {
+					return (
+						<span class="pagination-ellipsis" aria-hidden="true">
+							{ELLIPSIS}
+						</span>
+					);
+				}
+
+				const isCurrentPage = pageNum === page.currentPage;
+
+				return isCurrentPage ? (
+					<span
+						class="pagination-current"
+						aria-current="page"
+						aria-label={`現在のページ ${pageNum}`}
+					>
+						{pageNum}
+					</span>
+				) : (
+					<a
+						href={getPageUrl(pageNum as number)}
+						class="pagination-btn"
+						aria-label={`ページ ${pageNum}へ移動`}
+						data-astro-prefetch
+					>
+						{pageNum}
+					</a>
+				);
+			})}
+
+			{/* 次のページボタン */}
+			{page.url.next && (
+				<a href={page.url.next} class="pagination-btn" aria-label="次のページ" data-astro-prefetch>
+					&gt;&gt;
+				</a>
+			)}
+		</nav>
+	)
+}
+
+<style>
+	.pagination-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.5rem 0.75rem;
+		font-size: 0.875rem;
+		border-radius: 0.375rem;
+		transition: all 0.2s ease-in-out;
+		text-decoration: none;
+		border: 1px solid transparent;
+
+		&:hover {
+			color: var(--color-accent);
+			background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
+		}
+
+		&:focus {
+			outline: none;
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 50%, transparent);
+		}
+	}
+
+	.pagination-current {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.5rem 0.75rem;
+		font-size: 0.875rem;
+		font-weight: 700;
+		border-radius: 0.375rem;
+		color: var(--color-accent);
+		background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+	}
+
+	.pagination-ellipsis {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.5rem 0.75rem;
+		font-size: 0.875rem;
+		color: #6b7280;
+	}
+
+	:global([data-theme="dark"]) .pagination-ellipsis {
+		color: #9ca3af;
+	}
+</style>

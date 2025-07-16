@@ -1,6 +1,6 @@
 ---
 import { type CollectionEntry, getCollection } from "astro:content";
-import Pagination from "@/components/Paginator.astro";
+import NumberedPagination from "@/components/NumberedPagination.astro";
 import Note from "@/components/note/Note.astro";
 import PageLayout from "@/layouts/Base.astro";
 import { collectionDateSort } from "@/utils/date";
@@ -24,21 +24,6 @@ const meta = {
 	description: "Read my collection of notes",
 	title: "Notes",
 };
-
-const paginationProps = {
-	...(page.url.prev && {
-		prevUrl: {
-			text: "← Previous Page",
-			url: page.url.prev,
-		},
-	}),
-	...(page.url.next && {
-		nextUrl: {
-			text: "Next Page →",
-			url: page.url.next,
-		},
-	}),
-};
 ---
 
 <PageLayout meta={meta}>
@@ -58,6 +43,6 @@ const paginationProps = {
 				))
 			}
 		</ul>
-		<Pagination {...paginationProps} />
+		<NumberedPagination page={page} baseUrl="/notes/" />
 	</section>
 </PageLayout>
