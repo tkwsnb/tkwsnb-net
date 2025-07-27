@@ -1,0 +1,42 @@
+---
+interface Props {
+	videoId: string;
+	title?: string;
+	width?: string;
+	height?: string;
+}
+
+const { videoId, title = "YouTube video", width = "100%", height = "315" } = Astro.props;
+
+// YouTubeの埋め込みURLを生成
+const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+---
+
+<div class="youtube-embed my-6">
+	<div class="relative w-full" style="padding-bottom: 56.25%;">
+		<iframe
+			src={embedUrl}
+			title={title}
+			width={width}
+			height={height}
+			class="absolute top-0 left-0 h-full w-full rounded-lg"
+			frameborder="0"
+			allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+			allowfullscreen></iframe>
+	</div>
+</div>
+
+<style>
+	.youtube-embed {
+		/* レスポンシブ対応 */
+		max-width: 100%;
+	}
+
+	/* ダークモード対応 */
+	@media (prefers-color-scheme: dark) {
+		.youtube-embed iframe {
+			filter: brightness(0.9);
+		}
+	}
+</style>
+

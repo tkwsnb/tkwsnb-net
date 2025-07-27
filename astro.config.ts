@@ -14,6 +14,7 @@ import { siteConfig } from "./src/site.config";
 import remarkDirective from "remark-directive"; /* Handle ::: directives as nodes */
 import { remarkAdmonitions } from "./src/plugins/remark-admonitions"; /* Add admonitions */
 import { remarkReadingTime } from "./src/plugins/remark-reading-time";
+import { remarkYouTube } from "./src/plugins/remark-youtube"; /* Add YouTube embeds */
 import obsidianLinks from './integrations/obsidian-links'; // ← これを追加
 
 // Rehype plugins
@@ -86,7 +87,8 @@ export default defineConfig({
 		remarkPlugins: [
 			remarkReadingTime, 
 			remarkDirective, 
-			remarkAdmonitions
+			remarkAdmonitions,
+			remarkYouTube
 		],
 		remarkRehype: {
 			footnoteLabelProperties: {
