@@ -3,16 +3,6 @@ import type { Root } from "mdast";
 import { visit } from "unist-util-visit";
 import { createYouTubeEmbedHtml, type YouTubeEmbedOptions } from "../utils/youtube";
 
-interface YouTubeAttributes {
-	videoId?: string;
-	title?: string;
-	autoplay?: boolean;
-	mute?: boolean;
-	rel?: boolean;
-	start?: number;
-	end?: number;
-}
-
 // 属性を安全に取得する関数
 function getAttributes(node: any): YouTubeEmbedOptions {
 	const attributes = node.attributes || {};

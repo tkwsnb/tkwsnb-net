@@ -72,6 +72,14 @@ export function extractVideoId(url: string): string | null {
 export function createYouTubeEmbedHtml(options: YouTubeEmbedOptions): string {
 	const { videoId, title = "YouTube video" } = options;
 	
+	if (!validateVideoId(videoId)) {
+		return `
+<div class="youtube-embed-error my-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+	<p>Error: Invalid YouTube videoId: ${videoId}</p>
+</div>
+		`.trim();
+	}
+	
 	try {
 		const embedUrl = createYouTubeEmbedUrl(options);
 		
