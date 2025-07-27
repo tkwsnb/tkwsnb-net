@@ -1,15 +1,40 @@
 ---
-interface Props {
-	videoId: string;
-	title?: string;
+import { createYouTubeEmbedUrl, validateVideoId, type YouTubeEmbedOptions } from "../utils/youtube";
+
+interface Props extends YouTubeEmbedOptions {
 	width?: string;
 	height?: string;
 }
 
-const { videoId, title = "YouTube video", width = "100%", height = "315" } = Astro.props;
+const { 
+	videoId, 
+	title = "YouTube video", 
+	width = "100%", 
+	height = "315",
+	autoplay = false,
+	mute = false,
+	rel = false,
+	start,
+	end
+} = Astro.props;
+
+// バリデーション
+if (!validateVideoId(videoId)) {
+	throw new Error(`Invalid YouTube videoId: ${videoId}`);
+}
 
 // YouTubeの埋め込みURLを生成
-const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+const embedOptions: YouTubeEmbedOptions = {
+	videoId,
+	autoplay,
+	mute,
+	rel,
+};
+
+if (start !== undefined) embedOptions.start = start;
+if (end !== undefined) embedOptions.end = end;
+
+const embedUrl = createYouTubeEmbedUrl(embedOptions);
 ---
 
 <div class="youtube-embed my-6">
@@ -19,10 +44,12 @@ const embedUrl = `https://www.youtube.com/embed/${videoId}`;
 			title={title}
 			width={width}
 			height={height}
-			class="absolute top-0 left-0 h-full w-full rounded-lg"
-			frameborder="0"
+			class="absolute top-0 left-0 h-full w-full rounded-lg border-0"
 			allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-			allowfullscreen></iframe>
+			allowfullscreen
+			loading="lazy"
+			sandbox="allow-same-origin allow-scripts allow-presentation allow-popups allow-popups-to-escape-sandbox"
+		></iframe>
 	</div>
 </div>
 
@@ -30,13 +57,25 @@ const embedUrl = `https://www.youtube.com/embed/${videoId}`;
 	.youtube-embed {
 		/* レスポンシブ対応 */
 		max-width: 100%;
+		overflow: hidden;
 	}
-
+	
+	.youtube-embed iframe {
+		/* セキュリティ強化 */
+		sandbox="allow-same-origin allow-scripts allow-presentation allow-popups allow-popups-to-escape-sandbox";
+	}
+	
 	/* ダークモード対応 */
 	@media (prefers-color-scheme: dark) {
 		.youtube-embed iframe {
 			filter: brightness(0.9);
 		}
+	}
+	
+	/* ホバー効果 */
+	.youtube-embed:hover iframe {
+		transform: scale(1.02);
+		transition: transform 0.2s ease-in-out;
 	}
 </style>
 

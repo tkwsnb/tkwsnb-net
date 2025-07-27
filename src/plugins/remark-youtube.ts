@@ -1,28 +1,39 @@
 import type { Plugin } from "unified";
 import type { Root } from "mdast";
 import { visit } from "unist-util-visit";
+import { createYouTubeEmbedHtml, type YouTubeEmbedOptions } from "../utils/youtube";
 
-// YouTube動画の埋め込みHTMLを生成
-function createYouTubeEmbed(videoId: string, title?: string): string {
-	const embedUrl = `https://www.youtube.com/embed/${videoId}`;
-	const videoTitle = title || "YouTube video";
+interface YouTubeAttributes {
+	videoId?: string;
+	title?: string;
+	autoplay?: boolean;
+	mute?: boolean;
+	rel?: boolean;
+	start?: number;
+	end?: number;
+}
+
+// 属性を安全に取得する関数
+function getAttributes(node: any): YouTubeEmbedOptions {
+	const attributes = node.attributes || {};
 	
-	return `
-<div class="youtube-embed my-6">
-	<div class="relative w-full" style="padding-bottom: 56.25%;">
-		<iframe
-			src="${embedUrl}"
-			title="${videoTitle}"
-			width="100%"
-			height="315"
-			class="absolute top-0 left-0 w-full h-full rounded-lg"
-			frameborder="0"
-			allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-			allowfullscreen
-		></iframe>
-	</div>
-</div>
-	`.trim();
+	const result: YouTubeEmbedOptions = {
+		videoId: attributes.videoId as string,
+		title: attributes.title as string,
+		autoplay: attributes.autoplay === "true" || attributes.autoplay === true,
+		mute: attributes.mute === "true" || attributes.mute === true,
+		rel: attributes.rel === "true" || attributes.rel === true,
+	};
+	
+	// オプショナルな数値プロパティを条件付きで追加
+	if (attributes.start) {
+		result.start = parseInt(attributes.start as string);
+	}
+	if (attributes.end) {
+		result.end = parseInt(attributes.end as string);
+	}
+	
+	return result;
 }
 
 // remarkプラグイン
@@ -30,14 +41,12 @@ export const remarkYouTube: Plugin<[], Root> = () => {
 	return (tree) => {
 		visit(tree, "containerDirective", (node: any) => {
 			if (node.name === "youtube") {
-				const videoId = node.attributes?.videoId as string;
-				const title = node.attributes?.title as string;
+				const attributes = getAttributes(node);
+				const embedHtml = createYouTubeEmbedHtml(attributes);
 				
-				if (videoId) {
-					// コンテナディレクティブをHTMLに変換
-					node.type = "html";
-					node.value = createYouTubeEmbed(videoId, title);
-				}
+				// コンテナディレクティブをHTMLに変換
+				node.type = "html";
+				node.value = embedHtml;
 			}
 		});
 	};
