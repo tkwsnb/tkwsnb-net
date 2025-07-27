@@ -1,23 +1,20 @@
 ---
 import { Icon } from "astro-icon/components";
 
-/** 
-	Uses https://www.astroicon.dev/getting-started/
-	Find icons via guide: https://www.astroicon.dev/guides/customization/#open-source-icon-sets
-	Only installed pack is: @iconify-json/mdi
-*/
-const socialLinks: {
+interface SocialLink {
 	friendlyName: string;
-	isWebmention?: boolean;
 	link: string;
 	name: string;
-}[] = [
+	isWebmention?: boolean;
+}
+
+// ソーシャルリンクの設定
+const socialLinks: SocialLink[] = [
 	{
-		// ここにGitHubの情報を追加します
 		friendlyName: "github",
-		link: "https://github.com/tkwsnb", // あなたのGitHubユーザー名に書き換え
+		link: "https://github.com/tkwsnb",
 		name: "mdi:github",
-		isWebmention: true, // これが認証に必要です！
+		isWebmention: true, // Webmention認証用
 	},
 	{
 		friendlyName: "twitter",
@@ -37,6 +34,7 @@ const socialLinks: {
 						href={link}
 						rel={`noreferrer ${isWebmention ? "me authn" : ""}`}
 						target="_blank"
+						aria-label={`${friendlyName}のプロフィール`}
 					>
 						<Icon aria-hidden="true" class="h-8 w-8" focusable="false" name={name} />
 						<span class="sr-only">{friendlyName}</span>

@@ -13,23 +13,32 @@ interface Props {
 }
 
 const { post } = Astro.props;
+
+// 投稿データの抽出
 const { ogImage, title, description, updatedDate, publishDate } = post.data;
+
+// メタデータの準備
 const socialImage = ogImage ?? `/og-image/${post.id}.png`;
 const articleDate = updatedDate?.toISOString() ?? publishDate.toISOString();
+
+// コンテンツのレンダリング
 const { headings, remarkPluginFrontmatter } = await render(post);
 const readingTime: string = remarkPluginFrontmatter.readingTime;
+
+// メタデータオブジェクト
+const meta = {
+	articleDate,
+	description,
+	ogImage: socialImage,
+	title,
+};
 ---
 
-<BaseLayout
-	meta={{
-		articleDate,
-		description,
-		ogImage: socialImage,
-		title,
-	}}
->
+<BaseLayout meta={meta}>
 	<article class="grow break-words" data-pagefind-body>
-		<div id="blog-hero" class="mb-12"><Masthead content={post} readingTime={readingTime} /></div>
+		<div id="blog-hero" class="mb-12">
+			<Masthead content={post} readingTime={readingTime} />
+		</div>
 		<div class="flex flex-col gap-10 lg:flex-row lg:items-start">
 			{!!headings.length && <TOC headings={headings} />}
 			<div
@@ -41,10 +50,13 @@ const readingTime: string = remarkPluginFrontmatter.readingTime;
 			</div>
 		</div>
 	</article>
+
+	<!-- トップに戻るボタン -->
 	<button
 		class="hover:border-link fixed end-4 bottom-8 z-90 flex h-10 w-10 translate-y-28 cursor-pointer items-center justify-center rounded-full border-2 border-transparent bg-zinc-200 text-3xl opacity-0 transition-all transition-discrete duration-300 data-[show=true]:translate-y-0 data-[show=true]:opacity-100 sm:end-8 sm:h-12 sm:w-12 dark:bg-zinc-700"
 		data-show="false"
 		id="to-top-btn"
+		aria-label="ページトップに戻る"
 	>
 		<span class="sr-only">Back to top</span>
 		<svg
@@ -63,12 +75,13 @@ const readingTime: string = remarkPluginFrontmatter.readingTime;
 </BaseLayout>
 
 <script>
+	// トップに戻るボタンの制御
 	const scrollBtn = document.getElementById("to-top-btn") as HTMLButtonElement;
 	const targetHeader = document.getElementById("blog-hero") as HTMLDivElement;
 
 	function callback(entries: IntersectionObserverEntry[]) {
 		entries.forEach((entry) => {
-			// only show the scroll to top button when the heading is out of view
+			// ヘッダーが画面外に出た時のみボタンを表示
 			scrollBtn.dataset.show = (!entry.isIntersecting).toString();
 		});
 	}

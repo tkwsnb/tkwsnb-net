@@ -7,9 +7,17 @@ interface Props {
 	description?: string;
 }
 
+interface ShareLink {
+	name: string;
+	icon: string;
+	url: string;
+	color: string;
+}
+
 const { title, url } = Astro.props;
 
-const shareLinks = [
+// シェアリンクの設定を分離
+const createShareLinks = (title: string, url: string): ShareLink[] => [
 	{
 		name: "Twitter",
 		icon: "mdi:twitter",
@@ -59,6 +67,8 @@ const shareLinks = [
 		color: "hover:text-gray-800",
 	},
 ];
+
+const shareLinks = createShareLinks(title, url);
 ---
 
 <div class="my-8 border-t border-gray-200 pt-6 dark:border-gray-700">
