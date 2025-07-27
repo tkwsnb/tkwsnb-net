@@ -1,0 +1,97 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+	title: string;
+	url: string;
+	description?: string;
+}
+
+const { title, url } = Astro.props;
+
+const shareLinks = [
+	{
+		name: "Twitter",
+		icon: "mdi:twitter",
+		url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
+		color: "hover:text-blue-500",
+	},
+	{
+		name: "Facebook",
+		icon: "mdi:facebook",
+		url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+		color: "hover:text-blue-600",
+	},
+	{
+		name: "LinkedIn",
+		icon: "mdi:linkedin",
+		url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+		color: "hover:text-blue-700",
+	},
+	{
+		name: "はてなブックマーク",
+		icon: "mdi:bookmark-outline",
+		url: `https://b.hatena.ne.jp/entry/${encodeURIComponent(url)}`,
+		color: "hover:text-blue-500",
+	},
+	{
+		name: "Pocket",
+		icon: "mdi:pocket",
+		url: `https://getpocket.com/save?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`,
+		color: "hover:text-red-500",
+	},
+	{
+		name: "LINE",
+		icon: "mdi:line",
+		url: `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}`,
+		color: "hover:text-green-500",
+	},
+	{
+		name: "Bluesky",
+		icon: "mdi:cloud-outline",
+		url: `https://bsky.app/intent/compose?text=${encodeURIComponent(title + " " + url)}`,
+		color: "hover:text-blue-400",
+	},
+	{
+		name: "Mastodon",
+		icon: "mdi:mastodon",
+		url: `https://mastodon.social/share?text=${encodeURIComponent(title + " " + url)}`,
+		color: "hover:text-purple-500",
+	},
+	{
+		name: "Threads",
+		icon: "mdi:instagram",
+		url: `https://www.threads.net/intent/post?text=${encodeURIComponent(title + " " + url)}`,
+		color: "hover:text-gray-800",
+	},
+	{
+		name: "Instagram",
+		icon: "mdi:instagram",
+		url: `https://www.instagram.com/?url=${encodeURIComponent(url)}`,
+		color: "hover:text-pink-500",
+	},
+];
+---
+
+<div class="my-8 border-t border-gray-200 pt-6 dark:border-gray-700">
+	<div class="mb-4 flex items-center gap-2">
+		<Icon name="mdi:share-variant" class="h-5 w-5 text-gray-600 dark:text-gray-400" />
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">この記事をシェア</span>
+	</div>
+	<div class="flex flex-wrap gap-3">
+		{
+			shareLinks.map(({ name, icon, url, color }) => (
+				<a
+					href={url}
+					target="_blank"
+					rel="noopener noreferrer"
+					class={`inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors duration-200 ${color} dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700`}
+					title={`${name}でシェア`}
+					aria-label={`${name}でシェア`}
+				>
+					<Icon name={icon} class="h-5 w-5" />
+				</a>
+			))
+		}
+	</div>
+</div>
