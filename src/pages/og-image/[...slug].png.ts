@@ -31,10 +31,10 @@ const ogOptions: SatoriOptions = {
 };
 
 const markup = (title: string, pubDate: string) =>
-	html`<div tw="flex flex-col w-full h-full bg-[#1d1f21] text-[#c9cacc]">
+    html`<div tw="flex flex-col w-full h-full bg-[#1d1f21] text-[#c9cacc]" style="font-family: 'M PLUS 1p', 'Noto Sans JP', 'Roboto Mono'">
 		<div tw="flex flex-col flex-1 w-full p-10 justify-center">
 			<p tw="text-2xl mb-6">${pubDate}</p>
-			<h1 tw="text-6xl font-bold leading-snug text-white" style="font-family: 'M PLUS 1p', 'Noto Sans JP', 'Roboto Mono'">${title}</h1>
+            <h1 tw="text-6xl font-bold leading-snug text-white">${title}</h1>
 		</div>
 		<div tw="flex items-center justify-between w-full p-10 border-t border-[#2bbc89] text-xl">
 			<div tw="flex items-center">

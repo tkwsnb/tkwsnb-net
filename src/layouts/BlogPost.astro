@@ -18,7 +18,10 @@ const { post } = Astro.props;
 const { ogImage, title, description, updatedDate, publishDate } = post.data;
 
 // メタデータの準備
-const socialImage = ogImage ?? `/og-image/${post.id}.png`;
+const baseOgImage = ogImage ?? `/og-image/${post.id}.png`;
+// 画像の差し替えやフォント変更がすぐ反映されるよう、更新日時でバージョンを付与
+const versionSeed = (updatedDate ?? publishDate).getTime();
+const socialImage = `${baseOgImage}?v=${versionSeed}`;
 const articleDate = updatedDate?.toISOString() ?? publishDate.toISOString();
 
 // コンテンツのレンダリング
