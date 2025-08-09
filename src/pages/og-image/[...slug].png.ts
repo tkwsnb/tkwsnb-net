@@ -7,6 +7,8 @@ import { Resvg } from "@resvg/resvg-js";
 import type { APIContext, InferGetStaticPropsType } from "astro";
 import satori, { type SatoriOptions } from "satori";
 import { html } from "satori-html";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 const ogOptions: SatoriOptions = {
 	// debug: true,
@@ -32,7 +34,7 @@ const markup = (title: string, pubDate: string) =>
 	html`<div tw="flex flex-col w-full h-full bg-[#1d1f21] text-[#c9cacc]">
 		<div tw="flex flex-col flex-1 w-full p-10 justify-center">
 			<p tw="text-2xl mb-6">${pubDate}</p>
-			<h1 tw="text-6xl font-bold leading-snug text-white">${title}</h1>
+			<h1 tw="text-6xl font-bold leading-snug text-white" style="font-family: 'Noto Sans JP', 'Roboto Mono'">${title}</h1>
 		</div>
 		<div tw="flex items-center justify-between w-full p-10 border-t border-[#2bbc89] text-xl">
 			<div tw="flex items-center">
@@ -63,7 +65,25 @@ export async function GET(context: APIContext) {
 	const { pubDate, title } = context.props as Props;
 
 	const postDate = getFormattedDate(pubDate);
-	const svg = await satori(markup(title, postDate), ogOptions);
+
+    // Load Japanese-capable TTF fonts locally (M PLUS 1p) to render Japanese text
+    const regularPath = path.resolve("src/assets/fonts/MPLUS1p-Regular.ttf");
+    const boldPath = path.resolve("src/assets/fonts/MPLUS1p-Bold.ttf");
+    const [jpRegular, jpBold] = await Promise.all([
+        fs.readFile(regularPath),
+        fs.readFile(boldPath),
+    ]);
+
+    const optionsWithJP: SatoriOptions = {
+		...ogOptions,
+		fonts: [
+			...(ogOptions.fonts ?? []),
+            { data: jpRegular, name: "M PLUS 1p", style: "normal", weight: 400 },
+            { data: jpBold, name: "M PLUS 1p", style: "normal", weight: 700 },
+		],
+	};
+
+	const svg = await satori(markup(title, postDate), optionsWithJP);
 	const png = new Resvg(svg).render().asPng();
 	return new Response(png, {
 		headers: {
