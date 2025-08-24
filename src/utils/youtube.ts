@@ -13,6 +13,19 @@ export interface YouTubeEmbedOptions {
 }
 
 /**
+ * YouTubeのvideoId形式の正規表現パターン（11文字の英数字、アンダースコア、ハイフン）
+ */
+const VIDEO_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/;
+
+/**
+ * YouTubeのURLからvideoIdを抽出するための正規表現パターン
+ */
+const URL_PATTERNS = [
+	/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+	/youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/,
+] as const;
+
+/**
  * YouTubeのvideoIdをバリデーションする
  */
 export function validateVideoId(videoId: string): boolean {
@@ -20,9 +33,7 @@ export function validateVideoId(videoId: string): boolean {
 		return false;
 	}
 	
-	// YouTubeのvideoIdの形式をチェック（11文字の英数字）
-	const videoIdPattern = /^[a-zA-Z0-9_-]{11}$/;
-	return videoIdPattern.test(videoId.trim());
+	return VIDEO_ID_PATTERN.test(videoId.trim());
 }
 
 /**
@@ -51,14 +62,13 @@ export function createYouTubeEmbedUrl(options: YouTubeEmbedOptions): string {
  * YouTubeのURLからvideoIdを抽出する
  */
 export function extractVideoId(url: string): string | null {
-	const patterns = [
-		/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-		/youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/,
-	];
+	if (!url || typeof url !== "string") {
+		return null;
+	}
 	
-	for (const pattern of patterns) {
+	for (const pattern of URL_PATTERNS) {
 		const match = url.match(pattern);
-		if (match && match[1]) {
+		if (match?.[1]) {
 			return match[1];
 		}
 	}
@@ -67,23 +77,21 @@ export function extractVideoId(url: string): string | null {
 }
 
 /**
- * YouTubeの埋め込みHTMLを生成する
+ * エラー表示用のHTMLを生成する
  */
-export function createYouTubeEmbedHtml(options: YouTubeEmbedOptions): string {
-	const { videoId, title = "YouTube video" } = options;
-	
-	if (!validateVideoId(videoId)) {
-		return `
+function createErrorHtml(message: string): string {
+	return `
 <div class="youtube-embed-error my-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-	<p>Error: Invalid YouTube videoId: ${videoId}</p>
+	<p>Error: ${message}</p>
 </div>
-		`.trim();
-	}
-	
-	try {
-		const embedUrl = createYouTubeEmbedUrl(options);
-		
-		return `
+	`.trim();
+}
+
+/**
+ * YouTube埋め込みプレイヤーのHTMLを生成する
+ */
+function createEmbedPlayerHtml(embedUrl: string, title: string): string {
+	return `
 <div class="youtube-embed my-6">
 	<div class="relative w-full" style="padding-bottom: 56.25%;">
 		<iframe
@@ -99,12 +107,24 @@ export function createYouTubeEmbedHtml(options: YouTubeEmbedOptions): string {
 		></iframe>
 	</div>
 </div>
-		`.trim();
+	`.trim();
+}
+
+/**
+ * YouTubeの埋め込みHTMLを生成する
+ */
+export function createYouTubeEmbedHtml(options: YouTubeEmbedOptions): string {
+	const { videoId, title = "YouTube video" } = options;
+	
+	if (!validateVideoId(videoId)) {
+		return createErrorHtml(`Invalid YouTube videoId: ${videoId}`);
+	}
+	
+	try {
+		const embedUrl = createYouTubeEmbedUrl(options);
+		return createEmbedPlayerHtml(embedUrl, title);
 	} catch (error) {
-		return `
-<div class="youtube-embed-error my-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-	<p>Error: ${error instanceof Error ? error.message : "Invalid YouTube video"}</p>
-</div>
-		`.trim();
+		const errorMessage = error instanceof Error ? error.message : "Invalid YouTube video";
+		return createErrorHtml(errorMessage);
 	}
 } 

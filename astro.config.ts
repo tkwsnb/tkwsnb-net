@@ -85,10 +85,10 @@ export default defineConfig({
 			rehypeUnwrapImages,
 		],
 		remarkPlugins: [
+			remarkYouTube,
 			remarkReadingTime, 
 			remarkDirective, 
-			remarkAdmonitions,
-			remarkYouTube
+			remarkAdmonitions
 		],
 		remarkRehype: {
 			footnoteLabelProperties: {
