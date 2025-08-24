@@ -14,14 +14,21 @@ interface YouTubeLinkInfo {
 
 
 
-
+/**
+ * 変換可能なノードの型定義
+ */
+type TransformableNode = Paragraph | ContainerDirective;
 
 /**
- * HTMLノードの型定義
+ * ノードをHTMLノードに変換する共通関数
  */
-interface HTMLNode {
-	type: "html";
-	value: string;
+function convertNodeToHtml(node: TransformableNode, embedHtml: string): void {
+	// 型安全な方法でノードを変換
+	Object.assign(node, {
+		type: "html",
+		value: embedHtml,
+		children: undefined
+	});
 }
 
 /**
@@ -64,20 +71,33 @@ function extractYouTubeLinkInfo(linkNode: Link): YouTubeLinkInfo | null {
 	}
 	
 	// リンクのテキストを取得し、URLの場合は適切なタイトルを生成
-	let title = "";
-	if (linkNode.children && linkNode.children.length > 0) {
-		const firstChild = linkNode.children[0];
-		if (firstChild && "value" in firstChild && typeof firstChild.value === "string") {
-			title = firstChild.value;
-		}
-	}
-	
-	// テキストがURLそのものの場合や空の場合は、動画IDからタイトルを生成
-	if (!title || title === url || title.startsWith("http")) {
-		title = `YouTube video`;
-	}
+	const title = extractLinkTitle(linkNode);
 	
 	return { videoId, title };
+}
+
+/**
+ * リンクノードからタイトルを抽出する
+ */
+function extractLinkTitle(linkNode: Link): string {
+	if (!linkNode.children || linkNode.children.length === 0) {
+		return "YouTube video";
+	}
+	
+	const firstChild = linkNode.children[0];
+	if (!firstChild || !("value" in firstChild) || typeof firstChild.value !== "string") {
+		return "YouTube video";
+	}
+	
+	const title = firstChild.value;
+	const url = linkNode.url;
+	
+	// テキストがURLそのものの場合や空の場合は、デフォルトタイトルを生成
+	if (!title || title === url || title.startsWith("http")) {
+		return "YouTube video";
+	}
+	
+	return title;
 }
 
 /**
@@ -85,35 +105,30 @@ function extractYouTubeLinkInfo(linkNode: Link): YouTubeLinkInfo | null {
  */
 function replaceParagraphWithEmbed(paragraphNode: Paragraph, videoId: string, title: string): void {
 	const embedHtml = createYouTubeEmbedHtml({ videoId, title });
-	(paragraphNode as unknown as HTMLNode).type = "html";
-	(paragraphNode as unknown as HTMLNode).value = embedHtml;
+	convertNodeToHtml(paragraphNode, embedHtml);
 }
 
 /**
  * 段落内のYouTubeリンクを埋め込みプレイヤーに変換する
  */
 function transformMixedContentParagraph(paragraphNode: Paragraph): void {
-	const newChildren: unknown[] = [];
-	
-	for (const child of paragraphNode.children) {
+	const newChildren = paragraphNode.children.map(child => {
 		if (child.type === "link") {
 			const linkInfo = extractYouTubeLinkInfo(child);
 			if (linkInfo) {
 				const { videoId, title } = linkInfo;
 				const embedHtml = createYouTubeEmbedHtml({ videoId, title });
 				
-				newChildren.push({
+				return {
 					type: "html",
 					value: embedHtml
-				});
-				continue;
+				} as const;
 			}
 		}
-		// YouTubeリンク以外はそのまま追加
-		newChildren.push(child);
-	}
+		return child;
+	});
 	
-	paragraphNode.children = newChildren as typeof paragraphNode.children;
+	paragraphNode.children = newChildren;
 }
 
 /**
@@ -125,16 +140,10 @@ function transformYouTubeLinksInParagraph(paragraphNode: Paragraph): boolean {
 	}
 
 	// 段落内のYouTubeリンクを収集
-	const youtubeLinks: Array<{ videoId: string; title: string }> = [];
-	
-	for (const child of paragraphNode.children) {
-		if (child.type === "link") {
-			const linkInfo = extractYouTubeLinkInfo(child);
-			if (linkInfo) {
-				youtubeLinks.push(linkInfo);
-			}
-		}
-	}
+	const youtubeLinks = paragraphNode.children
+		.filter(child => child.type === "link")
+		.map(child => extractYouTubeLinkInfo(child))
+		.filter((info): info is YouTubeLinkInfo => info !== null);
 
 	if (youtubeLinks.length === 0) {
 		return false;
@@ -165,9 +174,7 @@ function transformYouTubeDirective(directiveNode: ContainerDirective): void {
 	
 	const attributes = parseDirectiveAttributes(directiveNode);
 	const embedHtml = createYouTubeEmbedHtml(attributes);
-	
-	(directiveNode as unknown as HTMLNode).type = "html";
-	(directiveNode as unknown as HTMLNode).value = embedHtml;
+	convertNodeToHtml(directiveNode, embedHtml);
 }
 
 /**
@@ -182,4 +189,4 @@ export const remarkYouTube: Plugin<[], Root> = () => {
 		// 段落内の通常のYouTubeリンクの自動変換
 		visit(tree, "paragraph", transformYouTubeLinksInParagraph);
 	};
-}; 
+};
