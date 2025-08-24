@@ -1,5 +1,5 @@
 import type { Plugin } from "unified";
-import type { Root, Paragraph, Link, HTML } from "mdast";
+import type { Root, Paragraph, Link } from "mdast";
 import type { ContainerDirective } from "mdast-util-directive";
 import { visit } from "unist-util-visit";
 import { createYouTubeEmbedHtml, type YouTubeEmbedOptions, extractVideoId } from "../utils/youtube";
@@ -14,13 +14,7 @@ interface YouTubeLinkInfo {
 
 
 
-/**
- * 段落ノードの型定義（YouTube埋め込み用）
- */
-interface ParagraphWithEmbed {
-	type: "html";
-	value: string;
-}
+
 
 /**
  * HTMLノードの型定義
@@ -98,7 +92,7 @@ function replaceParagraphWithEmbed(paragraphNode: Paragraph, videoId: string, ti
 /**
  * 段落内のYouTubeリンクを埋め込みプレイヤーに変換する
  */
-function transformMixedContentParagraph(paragraphNode: Paragraph, youtubeLinks: Array<YouTubeLinkInfo>): void {
+function transformMixedContentParagraph(paragraphNode: Paragraph): void {
 	const newChildren: unknown[] = [];
 	
 	for (const child of paragraphNode.children) {
@@ -157,7 +151,7 @@ function transformYouTubeLinksInParagraph(paragraphNode: Paragraph): boolean {
 	
 	// 複数のリンクがある場合や他のテキストが混在する場合は、
 	// YouTubeリンクのみを埋め込みに変換
-	transformMixedContentParagraph(paragraphNode, youtubeLinks);
+	transformMixedContentParagraph(paragraphNode);
 	return true;
 }
 
