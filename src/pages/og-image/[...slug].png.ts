@@ -7,8 +7,23 @@ import { Resvg } from "@resvg/resvg-js";
 import type { APIContext, InferGetStaticPropsType } from "astro";
 import satori, { type SatoriOptions } from "satori";
 import { html } from "satori-html";
-import fs from "node:fs/promises";
-import path from "node:path";
+
+
+const fetchFonts = async () => {
+	// Regular Font
+	const fontFileRegular = await fetch(
+		"https://cdn.jsdelivr.net/npm/@openfonts/noto-sans-jp_japanese@1.44.8/files/noto-sans-jp-japanese-300.woff"
+	);
+	const fontRegular: ArrayBuffer = await fontFileRegular.arrayBuffer();
+
+	// Bold Font
+	const fontFileBold = await fetch(
+		"https://cdn.jsdelivr.net/npm/@openfonts/noto-sans-jp_japanese@1.44.8/files/noto-sans-jp-japanese-500.woff"
+	);
+	const fontBold: ArrayBuffer = await fontFileBold.arrayBuffer();
+
+	return { fontRegular, fontBold };
+};
 
 const ogOptions: SatoriOptions = {
 	// debug: true,
@@ -31,10 +46,10 @@ const ogOptions: SatoriOptions = {
 };
 
 const markup = (title: string, pubDate: string) =>
-	html`<div tw="flex flex-col w-full h-full bg-[#1d1f21] text-[#c9cacc]" style="font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Roboto Mono', sans-serif">
+	html`<div tw="flex flex-col w-full h-full bg-[#1d1f21] text-[#c9cacc]" style="font-family: 'NotoSansJP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Roboto Mono', sans-serif">
 		<div tw="flex flex-col flex-1 w-full p-10 justify-center">
 			<p tw="text-2xl mb-6">${pubDate}</p>
-			<h1 tw="text-6xl font-bold leading-snug text-white" style="font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Roboto Mono', sans-serif">${title}</h1>
+			<h1 tw="text-6xl font-bold leading-snug text-white" style="font-family: 'NotoSansJP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Roboto Mono', sans-serif">${title}</h1>
 		</div>
 		<div tw="flex items-center justify-between w-full p-10 border-t border-[#2bbc89] text-xl">
 			<div tw="flex items-center">
@@ -56,20 +71,25 @@ export async function GET(context: APIContext) {
 
 	const postDate = getFormattedDate(pubDate);
 
-    // Load Japanese-capable TTF fonts locally (M PLUS 1p) to render Japanese text
-    const regularPath = path.resolve("src/assets/fonts/MPLUS1p-Regular.ttf");
-    const boldPath = path.resolve("src/assets/fonts/MPLUS1p-Bold.ttf");
-    const [jpRegular, jpBold] = await Promise.all([
-        fs.readFile(regularPath),
-        fs.readFile(boldPath),
-    ]);
+	// Fetch Noto Sans Japanese fonts from CDN
+	const { fontRegular, fontBold } = await fetchFonts();
 
-    const optionsWithJP: SatoriOptions = {
+	const optionsWithJP: SatoriOptions = {
 		...ogOptions,
 		fonts: [
 			...(ogOptions.fonts ?? []),
-            { data: jpRegular, name: "M PLUS 1p", style: "normal", weight: 400 },
-            { data: jpBold, name: "M PLUS 1p", style: "normal", weight: 700 },
+			{
+				name: "NotoSansJP",
+				data: fontRegular,
+				weight: 400,
+				style: "normal",
+			},
+			{
+				name: "NotoSansJP",
+				data: fontBold,
+				weight: 600,
+				style: "normal",
+			},
 		],
 	};
 
