@@ -85,8 +85,8 @@ export default defineConfig({
 			rehypeUnwrapImages,
 		],
 		remarkPlugins: [
-			remarkDirective,
 			remarkYouTube,
+			remarkDirective,
 			remarkReadingTime, 
 			remarkAdmonitions
 		],
