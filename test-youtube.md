@@ -1,5 +1,10 @@
 ---
 title: "YouTube Test"
+description: "YouTube埋め込み機能のテスト"
+publishDate: 2025-08-24T17:30:00+09:00
+tags:
+  - test
+  - youtube
 ---
 
 # YouTube埋め込みテスト

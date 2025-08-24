@@ -23,12 +23,10 @@ type TransformableNode = Paragraph | ContainerDirective;
  * ノードをHTMLノードに変換する共通関数
  */
 function convertNodeToHtml(node: TransformableNode, embedHtml: string): void {
-	// 型安全な方法でノードを変換
-	Object.assign(node, {
-		type: "html",
-		value: embedHtml,
-		children: undefined
-	});
+	// より直接的な方法でノードを変換
+	(node as any).type = "html";
+	(node as any).value = embedHtml;
+	(node as any).children = undefined;
 }
 
 /**
