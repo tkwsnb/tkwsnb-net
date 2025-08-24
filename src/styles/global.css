@@ -132,3 +132,72 @@
 	--tw-prose-quotes: var(--color-quote);
 	--tw-prose-th-borders: #666;
 }
+
+/* スマホでの表示改善 */
+@media (max-width: 640px) {
+	.prose {
+		--mobile-font-size: 0.875rem;
+		--mobile-line-height: 1.6;
+		--mobile-heading-margin: 0.75rem;
+		--mobile-paragraph-margin: 0.75rem;
+		--mobile-list-padding: 1.25rem;
+		--mobile-list-item-margin: 0.25rem;
+		--mobile-blockquote-margin: 0.75rem;
+		--mobile-blockquote-padding: 0.5rem 0.75rem;
+		--mobile-pre-margin: 0.75rem;
+		--mobile-pre-padding: 0.75rem;
+		--mobile-code-padding: 0.125rem 0.25rem;
+		
+		font-size: var(--mobile-font-size);
+		line-height: var(--mobile-line-height);
+	}
+	
+	.prose h1 {
+		font-size: 1.5rem;
+		margin-top: 1.5rem;
+		margin-bottom: var(--mobile-heading-margin);
+	}
+	
+	.prose h2 {
+		font-size: 1.25rem;
+		margin-top: 1.25rem;
+		margin-bottom: 0.5rem;
+	}
+	
+	.prose h3 {
+		font-size: 1.125rem;
+		margin-top: 1rem;
+		margin-bottom: 0.5rem;
+	}
+	
+	.prose p {
+		margin-bottom: var(--mobile-paragraph-margin);
+	}
+	
+	.prose ul, .prose ol {
+		margin-bottom: var(--mobile-paragraph-margin);
+		padding-left: var(--mobile-list-padding);
+	}
+	
+	.prose li {
+		margin-bottom: var(--mobile-list-item-margin);
+	}
+	
+	.prose blockquote {
+		margin: var(--mobile-blockquote-margin) 0;
+		padding: var(--mobile-blockquote-padding);
+		font-size: var(--mobile-font-size);
+	}
+	
+	.prose pre {
+		margin: var(--mobile-pre-margin) 0;
+		padding: var(--mobile-pre-padding);
+		font-size: 0.75rem;
+		overflow-x: auto;
+	}
+	
+	.prose code {
+		font-size: 0.8em;
+		padding: var(--mobile-code-padding);
+	}
+}
