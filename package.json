@@ -18,7 +18,7 @@
 		"@astrojs/markdown-remark": "^6.3.2",
 		"@astrojs/mdx": "4.3.0",
 		"@astrojs/rss": "4.0.11",
-		"@astrojs/sitemap": "3.4.0",
+		"@astrojs/sitemap": "3.5.1",
 		"@fontsource/noto-sans-jp": "^5.2.6",
 		"@tailwindcss/vite": "4.1.7",
 		"astro": "5.8.1",
