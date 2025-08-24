@@ -1,5 +1,4 @@
 import { getAllPosts } from "@/data/post";
-import { siteConfig } from "@/site.config";
 import { getFormattedDate } from "@/utils/date";
 import type { APIContext, InferGetStaticPropsType } from "astro";
 
