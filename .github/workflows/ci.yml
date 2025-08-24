@@ -30,7 +30,10 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm --version
+          node --version
+          pnpm install --verbose
 
       - name: Type check
         run: pnpm run check
