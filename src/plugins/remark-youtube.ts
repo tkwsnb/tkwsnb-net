@@ -42,7 +42,14 @@ function extractYouTubeLinkInfo(linkNode: any): { videoId: string; title: string
 		return null;
 	}
 	
-	const title = linkNode.children?.[0]?.value || url;
+	// リンクのテキストを取得し、URLの場合は適切なタイトルを生成
+	let title = linkNode.children?.[0]?.value || "";
+	
+	// テキストがURLそのものの場合や空の場合は、動画IDからタイトルを生成
+	if (!title || title === url || title.startsWith("http")) {
+		title = `YouTube video`;
+	}
+	
 	return { videoId, title };
 }
 
@@ -59,8 +66,10 @@ function transformYouTubeLinksInParagraph(paragraphNode: any): boolean {
 	
 	for (const child of paragraphNode.children) {
 		if (child.type === "link") {
+			console.log("Found link:", child.url);
 			const linkInfo = extractYouTubeLinkInfo(child);
 			if (linkInfo) {
+				console.log("Found YouTube link:", child.url, "->", linkInfo.videoId);
 				youtubeLinks.push(linkInfo);
 			}
 		}
@@ -75,6 +84,7 @@ function transformYouTubeLinksInParagraph(paragraphNode: any): boolean {
 		const firstLink = youtubeLinks[0];
 		if (firstLink) {
 			const { videoId, title } = firstLink;
+			console.log("Converting single YouTube link to embed");
 			const embedHtml = createYouTubeEmbedHtml({ videoId, title });
 			
 			paragraphNode.type = "html";
@@ -130,10 +140,17 @@ function transformYouTubeDirective(directiveNode: any): void {
  */
 export const remarkYouTube: Plugin<[], Root> = () => {
 	return (tree) => {
+		console.log("YouTube plugin started");
+		
 		// YouTubeコンテナディレクティブの処理
 		visit(tree, "containerDirective", transformYouTubeDirective);
 
 		// 段落内の通常のYouTubeリンクの自動変換
-		visit(tree, "paragraph", transformYouTubeLinksInParagraph);
+		visit(tree, "paragraph", (node: any) => {
+			console.log("Processing paragraph:", node.children?.length || 0, "children");
+			transformYouTubeLinksInParagraph(node);
+		});
+		
+		console.log("YouTube plugin finished");
 	};
 }; 
