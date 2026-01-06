@@ -1,5 +1,6 @@
 ---
 import { Icon } from "astro-icon/components";
+import NoteIcon from "./icons/NoteIcon.astro";
 
 interface SocialLink {
 	friendlyName: string;
@@ -41,7 +42,11 @@ const socialLinks: SocialLink[] = [
 						target="_blank"
 						aria-label={`${friendlyName}のプロフィール`}
 					>
-						<Icon aria-hidden="true" class="h-8 w-8" focusable="false" name={name} />
+						{friendlyName === "note" ? (
+							<NoteIcon class="h-8 w-8" />
+						) : (
+							<Icon aria-hidden="true" class="h-8 w-8" focusable="false" name={name} />
+						)}
 						<span class="sr-only">{friendlyName}</span>
 					</a>
 				</li>
