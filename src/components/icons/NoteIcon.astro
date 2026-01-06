@@ -2,22 +2,4 @@
 const { class: className } = Astro.props;
 ---
 
-<svg
-	class={className}
-	viewBox="0 0 24 24"
-	xmlns="http://www.w3.org/2000/svg"
-	aria-hidden="true"
-	focusable="false"
->
-	<rect width="24" height="24" fill="white"></rect>
-	<text
-		x="50%"
-		y="54%"
-		dominant-baseline="central"
-		text-anchor="middle"
-		font-family="'Times New Roman', Times, serif"
-		font-weight="bold"
-		font-size="20"
-		fill="black">n</text
-	>
-</svg>
+<img src="/icons/note-icon.png" alt="Note" class={className} loading="eager" />
