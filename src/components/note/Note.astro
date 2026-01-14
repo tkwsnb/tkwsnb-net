@@ -60,4 +60,18 @@ const contentClasses = [
 	<div class:list={contentClasses}>
 		<Content />
 	</div>
+
+	{
+		isPreview && (
+			<div class="mt-4 flex justify-end">
+				<a
+					href={`/notes/${note.id}/`}
+					class="text-accent underline decoration-dashed underline-offset-4 hover:decoration-solid"
+					aria-label={`ノート「${note.data.title}」の続きを読む`}
+				>
+					Read more
+				</a>
+			</div>
+		)
+	}
 </article>
