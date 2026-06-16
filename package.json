@@ -12,7 +12,9 @@
 		"format": "pnpm run format:code && pnpm run format:imports",
 		"format:code": "biome format . --write && prettier -w \"**/*\" \"!**/*.{md,mdx}\" --ignore-unknown --cache",
 		"format:imports": "biome check --formatter-enabled=false --write",
-		"check": "astro check"
+		"check": "astro check",
+		"new:note": "node scripts/new-content.mjs note",
+		"new:post": "node scripts/new-content.mjs post"
 	},
 	"dependencies": {
 		"@astrojs/markdown-remark": "^6.3.2",
