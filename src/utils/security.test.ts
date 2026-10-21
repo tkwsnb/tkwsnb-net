@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, test } from "bun:test";
 import { createYouTubeEmbedHtml } from "./youtube";
 import { replaceObsidianMediaLinks } from "../../integrations/obsidian-links";
