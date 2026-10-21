@@ -1,34 +1,38 @@
-# build output
+# ビルド出力
 dist/
 .output/
 
-# dependencies
+# 依存関係
 node_modules/
 
-# logs
+# ログ
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+build_log.txt
 
-# environment variables
+# 環境変数
 .env
-.env.production
+.env.*
+!.example.env
 
-# macOS-specific files
+# OS固有ファイル
 .DS_Store
 
-# misc
+# 証明書・鍵・キャッシュ
 *.pem
+*.key
+*.pub
+deploy_key*
+.tmp_deploy_key*
 .cache
 .astro
+.wrangler/
 
-# R2に保存している画像､動画ファイル等
+# R2に保存している画像・動画ファイル等
 src/content/assets
 
-# obsidian vault
+# Obsidian Vault設定
 src/content/.obsidian
 src/content/templates
-
-deploy_key
-.tmp_deploy_key

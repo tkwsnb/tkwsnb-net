@@ -6,7 +6,6 @@ interface SocialLink {
 	friendlyName: string;
 	link: string;
 	name: string;
-	isWebmention?: boolean;
 }
 
 // ソーシャルリンクの設定
@@ -15,7 +14,6 @@ const socialLinks: SocialLink[] = [
 		friendlyName: "github",
 		link: "https://github.com/tkwsnb",
 		name: "mdi:github",
-		isWebmention: true, // Webmention認証用
 	},
 	{
 		friendlyName: "twitter",
@@ -33,12 +31,12 @@ const socialLinks: SocialLink[] = [
 <div class="flex flex-wrap items-end gap-x-2">
 	<ul class="flex flex-1 items-center gap-x-2 sm:flex-initial">
 		{
-			socialLinks.map(({ friendlyName, isWebmention, link, name }) => (
+			socialLinks.map(({ friendlyName, link, name }) => (
 				<li class="flex">
 					<a
 						class="hover:text-link inline-block"
 						href={link}
-						rel={`noreferrer ${isWebmention ? "me authn" : ""}`}
+						rel="noreferrer noopener"
 						target="_blank"
 						aria-label={`${friendlyName}のプロフィール`}
 					>

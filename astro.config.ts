@@ -6,18 +6,18 @@ import expressiveCode from "astro-expressive-code";
 import icon from "astro-icon";
 import robotsTxt from "astro-robots-txt";
 import webmanifest from "astro-webmanifest";
-import { defineConfig, envField } from "astro/config";
+import { defineConfig } from "astro/config";
 import { expressiveCodeOptions } from "./src/site.config";
 import { siteConfig } from "./src/site.config";
 
-// Remark plugins
-import remarkDirective from "remark-directive"; /* Handle ::: directives as nodes */
-import { remarkAdmonitions } from "./src/plugins/remark-admonitions"; /* Add admonitions */
+// Remarkプラグイン
+import remarkDirective from "remark-directive"; /* ::: ディレクティブをノードとして処理 */
+import { remarkAdmonitions } from "./src/plugins/remark-admonitions"; /* アドモニションを追加 */
 import { remarkReadingTime } from "./src/plugins/remark-reading-time";
-import { remarkYouTube } from "./src/plugins/remark-youtube"; /* Add YouTube embeds */
-import obsidianLinks from './integrations/obsidian-links'; // ← これを追加
+import { remarkYouTube } from "./src/plugins/remark-youtube"; /* YouTube埋め込みを追加 */
+import obsidianLinks from "./integrations/obsidian-links";
 
-// Rehype plugins
+// Rehypeプラグイン
 import { rehypeHeadingIds } from "@astrojs/markdown-remark";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeExternalLinks from "rehype-external-links";
@@ -26,11 +26,8 @@ import rehypeUnwrapImages from "rehype-unwrap-images";
 // https://astro.build/config
 export default defineConfig({
 	site: siteConfig.url,
-	image: {
-		domains: ["webmention.io"],
-	},
 	integrations: [
-		obsidianLinks(), // ← これを追加
+		obsidianLinks(),
 		expressiveCode(expressiveCodeOptions),
 		icon(),
 		sitemap(),
@@ -39,13 +36,13 @@ export default defineConfig({
 		webmanifest({
 			// See: https://github.com/alextim/astro-lib/blob/main/packages/astro-webmanifest/README.md
 			name: siteConfig.title,
-			short_name: "Astro_Cactus", // optional
+			short_name: "Astro_Cactus",
 			description: siteConfig.description,
 			lang: siteConfig.lang,
-			icon: "public/icon.svg", // the source for generating favicon & icons
+			icon: "public/icon.svg",
 			icons: [
 				{
-					src: "icons/apple-touch-icon.png", // used in src/components/BaseHead.astro L:26
+					src: "icons/apple-touch-icon.png",
 					sizes: "180x180",
 					type: "image/png",
 				},
@@ -87,8 +84,8 @@ export default defineConfig({
 		remarkPlugins: [
 			remarkYouTube,
 			remarkDirective,
-			remarkReadingTime, 
-			remarkAdmonitions
+			remarkReadingTime,
+			remarkAdmonitions,
 		],
 		remarkRehype: {
 			footnoteLabelProperties: {
@@ -103,13 +100,6 @@ export default defineConfig({
 			exclude: ["@resvg/resvg-js"],
 		},
 		plugins: [tailwind(), rawFonts([".ttf", ".woff"])],
-	},
-	env: {
-		schema: {
-			WEBMENTION_API_KEY: envField.string({ context: "server", access: "secret", optional: true }),
-			WEBMENTION_URL: envField.string({ context: "client", access: "public", optional: true }),
-			WEBMENTION_PINGBACK: envField.string({ context: "client", access: "public", optional: true }),
-		},
 	},
 });
 

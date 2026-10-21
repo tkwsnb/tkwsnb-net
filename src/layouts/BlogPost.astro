@@ -3,7 +3,6 @@ import { type CollectionEntry, render } from "astro:content";
 
 import Masthead from "@/components/blog/Masthead.astro";
 import TOC from "@/components/blog/TOC.astro";
-import WebMentions from "@/components/blog/webmentions/index.astro";
 import ShareButtons from "@/components/blog/ShareButtons.astro";
 
 import BaseLayout from "./Base.astro";
@@ -49,7 +48,6 @@ const meta = {
 			>
 				<slot />
 				<ShareButtons title={title} url={Astro.url.href} />
-				<WebMentions />
 			</div>
 		</div>
 	</article>
@@ -79,20 +77,24 @@ const meta = {
 
 <script>
 	// トップに戻るボタンの制御
-	const scrollBtn = document.getElementById("to-top-btn") as HTMLButtonElement;
-	const targetHeader = document.getElementById("blog-hero") as HTMLDivElement;
+	const scrollBtn = document.getElementById("to-top-btn");
+	const targetHeader = document.getElementById("blog-hero");
 
-	function callback(entries: IntersectionObserverEntry[]) {
-		entries.forEach((entry) => {
-			// ヘッダーが画面外に出た時のみボタンを表示
-			scrollBtn.dataset.show = (!entry.isIntersecting).toString();
+	if (scrollBtn && targetHeader) {
+		function callback(entries: IntersectionObserverEntry[]) {
+			for (const entry of entries) {
+				// ヘッダーが画面外に出た時のみボタンを表示
+				if (scrollBtn) {
+					scrollBtn.dataset.show = (!entry.isIntersecting).toString();
+				}
+			}
+		}
+
+		scrollBtn.addEventListener("click", () => {
+			document.documentElement.scrollTo({ behavior: "smooth", top: 0 });
 		});
+
+		const observer = new IntersectionObserver(callback);
+		observer.observe(targetHeader);
 	}
-
-	scrollBtn.addEventListener("click", () => {
-		document.documentElement.scrollTo({ behavior: "smooth", top: 0 });
-	});
-
-	const observer = new IntersectionObserver(callback);
-	observer.observe(targetHeader);
 </script>
