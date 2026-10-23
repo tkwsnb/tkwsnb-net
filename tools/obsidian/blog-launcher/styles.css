@@ -1,0 +1,96 @@
+/* 記事作成ランチャーのウィジェットスタイル（Obsidianテーマ変数準拠） */
+.tkwsnb-launcher {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	margin: 1rem 0;
+	font-family: var(--font-interface);
+}
+
+.tkwsnb-launcher-card {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 10px;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.tkwsnb-launcher-header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.tkwsnb-launcher-title {
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: var(--text-normal);
+	margin: 0;
+}
+
+.tkwsnb-launcher-path {
+	font-size: 0.8rem;
+	color: var(--text-muted);
+	font-family: var(--font-monospace);
+	background-color: var(--background-primary);
+	padding: 0.15rem 0.5rem;
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.tkwsnb-launcher-desc {
+	font-size: 0.85rem;
+	color: var(--text-muted);
+	margin: 0;
+}
+
+.tkwsnb-launcher-row {
+	display: flex;
+	gap: 0.6rem;
+	align-items: center;
+	width: 100%;
+}
+
+.tkwsnb-launcher-input {
+	flex: 1;
+	height: 2.4rem;
+	padding: 0 0.75rem !important;
+	font-size: 0.95rem;
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+}
+
+.tkwsnb-launcher-input:focus {
+	border-color: var(--interactive-accent);
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+}
+
+.tkwsnb-launcher-btn {
+	height: 2.4rem;
+	padding: 0 1.1rem;
+	font-size: 0.92rem;
+	font-weight: 600;
+	border-radius: 6px;
+	cursor: pointer;
+	background-color: var(--interactive-accent) !important;
+	color: var(--text-on-accent) !important;
+	border: none;
+	transition: opacity 0.15s ease;
+	white-space: nowrap;
+}
+
+.tkwsnb-launcher-btn:hover {
+	opacity: 0.9;
+}
+
+.tkwsnb-launcher-btn-full {
+	width: 100%;
+	justify-content: center;
+}

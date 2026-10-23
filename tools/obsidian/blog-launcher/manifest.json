@@ -1,0 +1,10 @@
+{
+	"id": "blog-launcher",
+	"name": "Blog Content Launcher",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "ダッシュボードノートからワンクリックで note / post を新規作成するランチャープラグイン",
+	"author": "tkwsnb",
+	"authorUrl": "https://tkwsnb.net",
+	"isDesktopOnly": false
+}
