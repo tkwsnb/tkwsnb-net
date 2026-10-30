@@ -1,7 +1,9 @@
 // @ts-nocheck
 import { describe, expect, test } from "bun:test";
+import { pathToFileURL } from "node:url";
+import path from "node:path";
 import { createYouTubeEmbedHtml } from "./youtube";
-import { replaceObsidianMediaLinks } from "../../integrations/obsidian-links";
+import { replaceObsidianMediaLinks, resolveBuiltPagePaths } from "../../integrations/obsidian-links";
 
 describe("YouTube埋め込みHTMLのセキュリティ検証", () => {
 	test("タイトルに含まれるHTML特殊文字やダブルクォートがエスケープされ属性インジェクションを防ぐこと", () => {
@@ -42,5 +44,19 @@ describe("Obsidianメディアリンク変換のセキュリティ検証", () =>
 
 		expect(result.changed).toBe(false);
 		expect(result.content).toBe(traversalInput);
+	});
+
+	test("Windows環境のfile:// URLからビルド済みHTMLパスを正しく解決できること", () => {
+		const distDir = path.resolve(process.cwd(), "dist");
+		const dirUrl = pathToFileURL(`${distDir}${path.sep}`);
+		const resolved = resolveBuiltPagePaths(dirUrl, [
+			{ pathname: "" },
+			{ pathname: "notes/25/06/250608/" },
+		]);
+
+		expect(resolved).toEqual([
+			path.join(distDir, "index.html"),
+			path.join(distDir, "notes/25/06/250608/", "index.html"),
+		]);
 	});
 });

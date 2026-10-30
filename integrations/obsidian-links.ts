@@ -2,6 +2,18 @@
 import type { AstroIntegration } from "astro";
 import path from "node:path";
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";
+
+/**
+ * ビルド出力ディレクトリURLとページ一覧から対象のHTMLファイルパス配列を解決する
+ */
+export function resolveBuiltPagePaths(dir: URL, pages: { pathname: string }[]): string[] {
+	const baseDirPath = fileURLToPath(dir);
+	return pages.map((p) => {
+		if (p.pathname === "") return path.join(baseDirPath, "index.html");
+		return path.join(baseDirPath, p.pathname, "index.html");
+	});
+}
 
 /**
  * 環境変数または .env ファイルからアセット配信用のベースURLを取得する
@@ -78,12 +90,9 @@ export default function obsidianLinks(): AstroIntegration {
 				const baseUrl = getAssetsUrl();
 				if (!baseUrl) return;
 
-				const builtPagePaths = pages
-					.map((p) => {
-						if (p.pathname === "") return path.join(dir.pathname, "index.html");
-						return path.join(dir.pathname, p.pathname, "index.html");
-					})
-					.filter((p) => fs.existsSync(p));
+				const builtPagePaths = resolveBuiltPagePaths(dir, pages).filter((p) =>
+					fs.existsSync(p),
+				);
 
 				for (const filePath of builtPagePaths) {
 					const originalContent = await fs.promises.readFile(filePath, "utf-8");
