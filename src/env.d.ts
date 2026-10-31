@@ -19,6 +19,10 @@ declare module "bun" {
 	export class S3Client {
 		constructor(options: S3ClientOptions);
 		file(key: string): S3FileRef;
-		write(key: string, data: Uint8Array, options?: { type?: string }): Promise<number>;
+		write(
+			key: string,
+			data: Uint8Array | ArrayBufferView,
+			options?: { type?: string },
+		): Promise<number>;
 	}
 }

@@ -125,6 +125,23 @@ export async function syncMissingAssets(
 }
 
 /**
+ * S3Client インスタンスから R2StorageAdapter を生成する
+ * Node.js の NonSharedBuffer と TypeScript の Uint8Array 間の型不整合を防ぐため純粋な Uint8Array に変換して書き込む
+ */
+export function createR2StorageAdapter(
+	client: Pick<S3Client, "file" | "write">,
+): R2StorageAdapter {
+	return {
+		exists: async (key: string) => client.file(key).exists(),
+		upload: async (key: string, filePath: string, contentType: string) => {
+			const data = await fs.promises.readFile(filePath);
+			const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+			await client.write(key, bytes, { type: contentType });
+		},
+	};
+}
+
+/**
  * メイン実行処理: src/content/assets 内の未同期メディアを Cloudflare R2 へアップロードする
  */
 export async function runSyncAssetsCli(projectRoot = process.cwd()): Promise<void> {
@@ -154,13 +171,7 @@ export async function runSyncAssetsCli(projectRoot = process.cwd()): Promise<voi
 		bucket: s3Config.bucket,
 	});
 
-	const storage: R2StorageAdapter = {
-		exists: async (key: string) => client.file(key).exists(),
-		upload: async (key: string, filePath: string, contentType: string) => {
-			const data = await fs.promises.readFile(filePath);
-			await client.write(key, data, { type: contentType });
-		},
-	};
+	const storage = createR2StorageAdapter(client);
 
 	const entries = fs
 		.readdirSync(assetsDir, { withFileTypes: true })

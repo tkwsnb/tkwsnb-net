@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import {
+	createR2StorageAdapter,
 	decodeRemotelySaveS3Config,
 	getAssetContentType,
 	syncMissingAssets,
@@ -76,5 +80,38 @@ describe("R2アセット同期スクリプトの検証", () => {
 				contentType: "image/png",
 			},
 		]);
+	});
+
+	test("createR2StorageAdapterのuploadがBufferではなく純粋なUint8ArrayをS3Client.writeへ渡すこと", async () => {
+		const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "sync-assets-test-"));
+		const sampleFile = path.join(tmpDir, "sample.png");
+		await fs.promises.writeFile(sampleFile, new Uint8Array([137, 80, 78, 71]));
+
+		let receivedKey = "";
+		let receivedData: unknown = null;
+		let receivedOptions: { type?: string } | undefined;
+
+		const adapter = createR2StorageAdapter({
+			file: () => ({ exists: async () => false }),
+			write: async (key, data, options) => {
+				receivedKey = key;
+				receivedData = data;
+				receivedOptions = options;
+				return data.byteLength;
+			},
+		});
+
+		try {
+			await adapter.upload("assets/sample.png", sampleFile, "image/png");
+			expect(receivedKey).toBe("assets/sample.png");
+			expect(receivedOptions).toEqual({ type: "image/png" });
+			expect(receivedData instanceof Uint8Array).toBe(true);
+			if (receivedData instanceof Uint8Array) {
+				expect(receivedData.constructor).toBe(Uint8Array);
+				expect(Array.from(receivedData)).toEqual([137, 80, 78, 71]);
+			}
+		} finally {
+			await fs.promises.rm(tmpDir, { recursive: true, force: true });
+		}
 	});
 });
